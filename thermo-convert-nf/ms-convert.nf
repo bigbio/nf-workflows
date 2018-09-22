@@ -1,14 +1,12 @@
 #!/usr/bin/env nextflow
 
-params.peptides = 'doc/data/small-yeast.fasta'
-params.spectra = 'doc/data/demo.ms2'
+params.spectra = 'data/*.RAW'
 
-peptides = file(params.peptides)
 spectra = file(params.spectra)
 
 
 process indexPeptides {
-    container 'containers.biocontainers.pro/biocontainers/crux:v2.1_cv2.588'
+    container 'biocontainers/thermoraw'
     
     input:
     file 'small-yeast.fasta' from peptides
@@ -26,7 +24,7 @@ process indexPeptides {
 }
 
 process postProcess {
-    container 'containers.biocontainers.pro/biocontainers/crux:v2.1_cv2.588'
+    container 'biocontainers/crux'
 
     input:
     file 'search.target.txt' from searchResults        
