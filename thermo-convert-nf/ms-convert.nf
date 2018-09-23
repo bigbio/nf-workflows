@@ -1,46 +1,30 @@
 #!/usr/bin/env nextflow
 
-params.spectra = 'data/*.RAW'
-
-spectra = file(params.spectra)
-
-
-process indexPeptides {
-    container 'biocontainers/thermoraw'
-    
-    input:
-    file 'small-yeast.fasta' from peptides
-    file 'demo.ms2' from spectra
-
-    output:
-    file 'crux-output/tide-search.target.txt' into searchResults
-    file 'crux-output/tide-search.decoy.txt' into decoyResults
-
-    script:
+params.rawFolder = 'data/'
+params.metaFolder = 'meta/'
+ 
+process downloadFiles {
+    container 'quay.io/biocontainers/gnu-wget:1.18--3'
+   
+    script: 
     """
-    crux tide-index small-yeast.fasta yeast-index
-    crux tide-search --compute-sp T demo.ms2 yeast-index
-    """
+    wget -v -r -nd -A "*.raw" --no-host-directories --cut-dirs=1 ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2018/09/PXD010376/ -P $params.rawFolder
+    """ 
 }
 
-process postProcess {
-    container 'biocontainers/crux'
+rawFiles = Channel.fromPath( 'data/*.raw' )
+
+process generateMetadata {
+    container 'quay.io/biocontainers/thermorawfileparser:0.0.2018.09.07--0' 
 
     input:
-    file 'search.target.txt' from searchResults        
-    file 'search.decoy.txt' from decoyResults
-
-    output:
-    file 'crux-output/percolator.target.psms.txt' into percResults
-
+    file 'query.raw' from rawFiles
+    
     script:
     """
-    crux percolator search.target.txt
+    thermorawparser -m 1 -i query.raw -o $params.metaFolder
     """
+
 }
 
-percResults.subscribe { results ->
-    results.copyTo('./results.txt')
-    println "Final results at: results.txt"
-    
-}
+
