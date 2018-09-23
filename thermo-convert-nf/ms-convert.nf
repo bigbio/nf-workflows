@@ -1,30 +1,37 @@
 #!/usr/bin/env nextflow
-
-params.rawFolder = 'data/'
-params.metaFolder = 'meta/'
  
 process downloadFiles {
     container 'quay.io/biocontainers/gnu-wget:1.18--3'
+    
+    output:
+    file '*.raw' into rawFiles
    
     script: 
     """
-    wget -v -r -nd -A "*.raw" --no-host-directories --cut-dirs=1 ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2018/09/PXD010376/ -P $params.rawFolder
+    wget -v -r -nd -A "*.raw" --no-host-directories --cut-dirs=1 ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2018/09/PXD010376/
     """ 
 }
 
-rawFiles = Channel.fromPath( 'data/*.raw' )
 
 process generateMetadata {
     container 'quay.io/biocontainers/thermorawfileparser:0.0.2018.09.07--0' 
 
     input:
-    file 'query.raw' from rawFiles
+    file '*.raw' from rawFiles
+    
+    output: 
+    file '*.json' into metaResults
     
     script:
     """
-    thermorawparser -m 1 -i query.raw -o $params.metaFolder
+    bash -c ThermoRawFileParser.sh -m 1 -i ${rawFile} -o $params.metaFolder
     """
 
 }
 
+metaResults.subscribe { results ->
+    results.copyTo('./results.txt')
+    println "Final results at: results.txt"
+    
+}
 
