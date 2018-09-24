@@ -12,25 +12,26 @@ process downloadFiles {
     """ 
 }
 
+outputFolder = 'meta'
 
 process generateMetadata {
     container 'quay.io/biocontainers/thermorawfileparser:0.0.2018.09.07--0' 
 
     input:
-    file '*.raw' from rawFiles
+    file rawFile from rawFiles
     
     output: 
     file '*.json' into metaResults
     
     script:
     """
-    bash -c ThermoRawFileParser.sh -m 1 -i ${rawFile} -o $params.metaFolder
+    bash -c ThermoRawFileParser.sh -m 1 -f 1 -i ${rawFile} -o $outputFolder 
     """
 
 }
 
 metaResults.subscribe { results ->
-    results.copyTo('./results.txt')
+    results.copyTo('./results.json')
     println "Final results at: results.txt"
     
 }
