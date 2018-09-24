@@ -15,13 +15,14 @@ process downloadFiles {
 process generateMetadata {
     container 'ypriverol/thermorawfileparser:0.1' 
     
-    publishDir 'data/'
+    publishDir 'data/', mode:'copy'
  
     input:
     file rawFile from rawFiles.flatten()
     
     output: 
     file '*.json' into metaResults
+    file '*.mzML' into spectraFiles
     
     script:
     """
@@ -29,4 +30,3 @@ process generateMetadata {
     """
 
 }
-
