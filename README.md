@@ -1,4 +1,7 @@
-# Proteomics and Multi-omics workflows
+Proteomics and Multi-omics workflows
+====================================
+
+![Nextflow version](https://img.shields.io/badge/nextflow->0.27.0-brightgreen.svg)
 
 This repository store different workflows to analysis proteomics and multi-omics data using [BioContainers](biocontainers.pro) and [Nextflow](nextflow.io). Each workflow resolve one specific proteomics experiment and
 should be seen as a tutorial to proteomics, biocontainers and nextflow. We are reciving Issues and PR from contributors. It is important to notice that all pipelines will be run using local setup for nextflow, but this can be easily addapted to other [architectures or executors](https://www.nextflow.io/docs/latest/executor.html)
