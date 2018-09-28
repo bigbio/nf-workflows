@@ -12,3 +12,5 @@ CTestTestfile.cmake
 *work/
 
 .idea/
+
+*.log.*
