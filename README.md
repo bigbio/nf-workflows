@@ -10,3 +10,5 @@ should be seen as a tutorial to proteomics, biocontainers and nextflow. We are r
 
 - [Converting the raw data from RAW to mzML](thermo-convert-nf) : This example allow you to dowload the raw data from PRIDE ftp and convert the files to mzML and get the json file with the metadata.
 
+- [Run QC before identification using quameter](qc-rawms-nf) : This workflow download some data from PRIDE and perform QC using the quameter with ID free option.
+

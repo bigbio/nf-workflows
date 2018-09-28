@@ -1,10 +1,12 @@
-Download data from PRIDE and convert to mzML
+Quameter IDFree Pipeline
 ========================
 
 This workflow download a dataset from PRIDE and convert all the files to
- mzML using rhe popular workflow system [nextflow](https://www.nextflow.io/).
+ mzML, finally it execute the quameter tool with IDFree option for quality control
+ of RAW data previous to Peptide Identification.
 
-Preferquisites: 
+
+Preferquisites:
 
 - Docker: The crux tool is run using a docker container from [BioContainers](http://biocontainers.pro)
 - NextFlow: You need to install [nextflow](https://www.nextflow.io/)
