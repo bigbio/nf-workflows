@@ -26,4 +26,7 @@ process generateMetadata {
     file '*.json' into metaResults
     file '*.mzML' into spectraFiles
 
-}
+    script:
+    """
+    ThermoRawFileParser -i=${rawFile} -m=0 -f=1 -o=./
+    """
