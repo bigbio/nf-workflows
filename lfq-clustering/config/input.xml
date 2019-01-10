@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<bioml>
+	<note>
+	Each one of the parameters for x! tandem is entered as a labeled note node. 
+	Any of the entries in the default_input.xml file can be over-ridden by
+	adding a corresponding entry to this file. This file represents a minimum
+	input file, with only entries for the default settings, the output file
+	and the input spectra file name. 
+	See the taxonomy.xml file for a description of how FASTA sequence list 
+	files are linked to a taxon name.
+	</note>
+
+	<note type="input" label="list path, default parameters">/home/biodocker/bin/tandem-linux-17-02-01-4/bin/default_input.xml</note>
+	<note type="input" label="list path, taxonomy information">taxonomy.xml</note>
+
+	<note type="input" label="protein, taxon">user_database</note>
+	
+	<note type="input" label="spectrum, path">ORG_NAME</note>
+
+	<note type="input" label="output, path">ORG_NAME.xml</note>
+	<note type="input" label="output, mzid">yes</note>
+
+	<note>The following values are automatically adapted by the config script</note>
+	<note type="input" label="spectrum, fragment monoisotopic mass error">FRAG_TOL</note>
+	<note type="input" label="spectrum, parent monoisotopic mass error plus">PREC_TOL</note>
+	<note type="input" label="spectrum, parent monoisotopic mass error minus">PREC_TOL</note>
+	<note type="input" label="scoring, maximum missed cleavage sites">MISSED_CLEAV</note>
+	<note type="input" label="spectrum, fragment monoisotopic mass error units">Daltons</note>
+	<note type="input" label="spectrum, parent monoisotopic mass error units">ppm</note>
+	<note type="input" label="spectrum, threads">THREADS</note>
+	<note type="input" label="residue, modification mass">57.021464@C</note>
+	<note type="input" label="residue, potential modification mass">15.994915@M,+42.010565@[</note>
+	<note type="input" label="refine">no</note>
+</bioml>

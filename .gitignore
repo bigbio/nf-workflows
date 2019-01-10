@@ -8,8 +8,13 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 
-.nextflow 
+.nextflow*
+*.swp
+trace.txt*
+nextflow
+nf-test/
 *work/
+*result/
 
 .idea/
 
