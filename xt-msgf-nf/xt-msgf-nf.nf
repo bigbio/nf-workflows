@@ -5,16 +5,20 @@
  */
 params.raw_dir = "${baseDir}/test"
 params.fasta_file = "${baseDir}/test/crap.fasta"
+
 // X!Tandem template files should not be changed unless for very good reason.
 params.xtandem_template = "${baseDir}/config/input.xml"
 params.xtandem_taxonomy = "${baseDir}/config/taxonomy.xml"
 params.msgf_mods = "${baseDir}/config/Mods.txt"
 params.pia_config = "${baseDir}/config/pia_config.xml"
+
 // precursor tolerance can only be specified in ppm
 params.prec_tol = 10
+
 // fragment tolerance can only be specified in Th
 params.frag_tol = 0.5
 // missed cleavages
+
 params.mc = 1
 // TODO: specify a way to define PTMs
 
@@ -77,7 +81,7 @@ process createTandemConfig {
  * Search every MGF file using X!Tandem
  */
 process searchTandem {
-	container 'jgriss/tandem:v17-02-01-4'
+	container 'biocontainers/tandem:v17-02-01-4_cv4'
 
 	input:
 	file xtandem_settings
@@ -126,7 +130,7 @@ process createMsgfDbIndex {
  *   * -ntt 2 = Termini
  */
 process searchMsgf {
-	container 'biocontainers/msgfp:v9949_cv3'
+	container 'quay.io/biocontainers/msgf_plus:2017.07.21--3'
 	publishDir "result"
 
 	input:
@@ -140,8 +144,7 @@ process searchMsgf {
 	
 	script:
 	"""
-	java -jar /home/biodocker/bin/MSGFPlus_9949/MSGFPlus.jar \
-	-d user.fasta -s ${mgf_file_msgf} -t ${params.prec_tol}ppm -ti 0,1 -thread ${threads} \
+	msgf_plus -d user.fasta -s ${mgf_file_msgf} -t ${params.prec_tol}ppm -ti 0,1 -thread ${threads} \
 	-tda 0 -inst 3 -e 1 -ntt ${params.mc} -mod ${msgf_mods} -minCharge 2 -maxCharge 4 
 	"""
 }
