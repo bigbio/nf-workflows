@@ -12,3 +12,5 @@ should be seen as a tutorial to proteomics, biocontainers and nextflow. We are r
 
 - [Run QC before identification using quameter](qc-rawms-nf) : This workflow download some data from PRIDE and perform QC using the quameter with ID free option.
 
+- [Using spectral-clustering to infer additional PSMs](lfq-clustering): This workflow uses spectral-clustering to infer additional PSMs which can subsequently be used to improve label-free quanitation. The workflow searches the passed MGF files uses X!Tandem and MSGF+ and processes both results in parallel for benchmark reasons.
+
