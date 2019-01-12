@@ -104,7 +104,7 @@ process searchTandem {
  * Create the MSGF+ database index
  */
 process createMsgfDbIndex {
-	container 'biocontainers/msgfp:v9949_cv3'
+	container 'quay.io/biocontainers/msgf_plus:2017.07.21--3'
 	// MSGF+ will raise an exception since the MGF file is empty
 	validExitStatus 0,1
 	
@@ -117,7 +117,7 @@ process createMsgfDbIndex {
 	script:
 	"""
 	touch /tmp/test.mgf
-	java -jar /home/biodocker/bin/MSGFPlus_9949/MSGFPlus.jar -s /tmp/test.mgf -d user.fasta -tda 0
+	msgf_plus -s /tmp/test.mgf -d user.fasta -tda 0
 	"""
 }
 
