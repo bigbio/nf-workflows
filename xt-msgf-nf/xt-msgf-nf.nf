@@ -17,13 +17,22 @@ params.prec_tol = 10
 
 // fragment tolerance can only be specified in Th
 params.frag_tol = 0.5
-// missed cleavages
 
+// missed cleavages
 params.mc = 1
+
 // TODO: specify a way to define PTMs
 
 // number of threads per search engine
 threads = 1
+
+// minimun charge to be search
+params.min_charge = 2
+
+// maximum charge to be search
+params.max_charge = 4
+
+
 
 /**
  * Create a channel for all MGF files
@@ -145,7 +154,7 @@ process searchMsgf {
 	script:
 	"""
 	msgf_plus -d user.fasta -s ${mgf_file_msgf} -t ${params.prec_tol}ppm -ti 0,1 -thread ${threads} \
-	-tda 0 -inst 3 -e 1 -ntt ${params.mc} -mod ${msgf_mods} -minCharge 2 -maxCharge 4 
+	-tda 0 -inst 3 -e 1 -ntt ${params.mc} -mod ${msgf_mods} -minCharge ${params.min_charge} -maxCharge ${params.max_charge}
 	"""
 }
 
@@ -166,7 +175,7 @@ msgf_key = msgf_result.map { file ->
 combined_results = xtandem_key.combine(msgf_key, by: 0)
 
 process mergeSearchResults {
-	container 'biocontainers/pia:v1.3.8_cv1'
+	container 'ypriverol/pia:1.3.10'
 
 	input:
 	set val(mgf_name), file(xtandem_mzid), file(msgf_mzid) from combined_results
@@ -176,13 +185,15 @@ process mergeSearchResults {
 
 	script:
 	"""
-	java -cp /home/biodocker/pia/pia-1.3.8.jar de.mpc.pia.intermediate.compiler.PIACompiler \
-	-infile ${xtandem_mzid} -infile ${msgf_mzid} -name "${mgf_name}" -outfile ${mgf_name}.xml
+	pia compiler -infile ${xtandem_mzid} -infile ${msgf_mzid} -name "${mgf_name}" -outfile ${mgf_name}.xml
 	"""
 }
 
+/**
+ * Inference and filtering of the results
+ */
 process filterPiaResuls {
-	container 'biocontainers/pia:v1.3.8_cv1'
+	container 'ypriverol/pia:1.3.10'
 	publishDir "result"
 
 	input:
@@ -192,11 +203,8 @@ process filterPiaResuls {
 	output:
 	file "*.mzTab" into final_result
 
-	// TODO: Failed to download unimod.xml - use cached version
-
 	script:
 	"""
-	java -jar /home/biodocker/pia/pia-1.3.8.jar -infile ${pia_xml} -paramFile ${pia_config} \
-	-psmExport ${pia_xml}.mzTab mzTab
+	pia inference -infile ${pia_xml} -paramFile ${pia_config} -psmExport ${pia_xml}.mzTab mzTab
 	"""
 }
