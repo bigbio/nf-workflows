@@ -12,7 +12,7 @@
             <ITEM value="xtandem_expect" type="string" name="score name"/>
         </NODE>
         <NODE description="Sets the number of top identifications per spectrum used for all further FDR calculations, 0 meaning all identifications are used." name="PSMSetAllTopidentificationsForFDR">
-            <ITEM value="1" type="string" name="number of top identifications"/>
+            <ITEM value="0" type="string" name="number of top identifications"/>
         </NODE>
         <NODE description="Sets the regular expression used for decoy detection or if 'searchengine' is given as pattern, assumes a decoy search directly performed by the search engine." name="PSMSetAllDecoyPattern">
             <ITEM value=".*_REVERSED.*" type="string" name="decoy pattern"/>
@@ -20,15 +20,15 @@
         <NODE description="Calculates the FDR scores for all files." name="PSMCalculateAllFDR"/>
         <NODE description="Calculates the combined FDR score. The FDR scores for the single files should be calculated before." name="PSMCalculateCombinedFDRScore"/>
         <NODE description="Sets whether modifications should be considered while inferring the peptides from the PSMs. Defaults to false" name="PeptideConsiderModifications">
-            <ITEM value="no" type="string" name="consider modifications"/>
+            <ITEM value="true" type="string" name="consider modifications"/>
         </NODE>
         <NODE description="Adds a filter used by the protein inference. A filter is added by its name, an abbreviation for the comparison, the compared value and (optional), whether the comparison should be negatede.g. &quot;AddInferenceFilter=charge_filter,EQ,2,no&quot;" name="ProteinAddInferenceFilter">
             <ITEM value="psm_score_filter_psm_combined_fdr_score" type="string" name="filtername"/>
             <ITEM value="LEQ" type="string" name="comparison"/>
             <ITEM value="0.01" type="string" name="value"/>
-            <ITEM value="no" type="string" name="negate"/>
+            <!--<ITEM value="no" type="string" name="negate"/>-->
         </NODE>
-        <NODE description="Inferes the proteins with the given inference method. Any inference filters should be set before this call with calls of AddInferenceFilter. The scoring method is set with the second argument. The scoring settings can be given by athird argument containing setting=value[;setting=value]* (usual settings are used_score and used_spectra)." name="ProteinInfereProteins">
+        <NODE description="Infers the proteins with the given inference method. Any inference filters should be set before this call with calls of AddInferenceFilter. The scoring method is set with the second argument. The scoring settings can be given by athird argument containing setting=value[;setting=value]* (usual settings are used_score and used_spectra)." name="ProteinInfereProteins">
             <ITEM value="inference_spectrum_extractor" type="string" name="inference"/>
             <ITEM value="scoring_multiplicative" type="string" name="scoring"/>
             <ITEM value="psm_combined_fdr_score" type="string" name="used score"/>

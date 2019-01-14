@@ -5,21 +5,34 @@
  */
 params.raw_dir = "${baseDir}/test"
 params.fasta_file = "${baseDir}/test/crap.fasta"
+
 // X!Tandem template files should not be changed unless for very good reason.
 params.xtandem_template = "${baseDir}/config/input.xml"
 params.xtandem_taxonomy = "${baseDir}/config/taxonomy.xml"
 params.msgf_mods = "${baseDir}/config/Mods.txt"
 params.pia_config = "${baseDir}/config/pia_config.xml"
+
 // precursor tolerance can only be specified in ppm
 params.prec_tol = 10
+
 // fragment tolerance can only be specified in Th
 params.frag_tol = 0.5
+
 // missed cleavages
 params.mc = 1
+
 // TODO: specify a way to define PTMs
 
 // number of threads per search engine
 threads = 1
+
+// minimun charge to be search
+params.min_charge = 2
+
+// maximum charge to be search
+params.max_charge = 4
+
+
 
 /**
  * Create a channel for all MGF files
@@ -77,7 +90,7 @@ process createTandemConfig {
  * Search every MGF file using X!Tandem
  */
 process searchTandem {
-	container 'jgriss/tandem:v17-02-01-4'
+	container 'biocontainers/tandem:v17-02-01-4_cv4'
 
 	input:
 	file xtandem_settings
@@ -100,7 +113,7 @@ process searchTandem {
  * Create the MSGF+ database index
  */
 process createMsgfDbIndex {
-	container 'biocontainers/msgfp:v9949_cv3'
+	container 'quay.io/biocontainers/msgf_plus:2017.07.21--3'
 	// MSGF+ will raise an exception since the MGF file is empty
 	validExitStatus 0,1
 	
@@ -113,7 +126,7 @@ process createMsgfDbIndex {
 	script:
 	"""
 	touch /tmp/test.mgf
-	java -jar /home/biodocker/bin/MSGFPlus_9949/MSGFPlus.jar -s /tmp/test.mgf -d user.fasta -tda 0
+	msgf_plus -s /tmp/test.mgf -d user.fasta -tda 0
 	"""
 }
 
@@ -126,7 +139,7 @@ process createMsgfDbIndex {
  *   * -ntt 2 = Termini
  */
 process searchMsgf {
-	container 'biocontainers/msgfp:v9949_cv3'
+	container 'quay.io/biocontainers/msgf_plus:2017.07.21--3'
 	publishDir "result"
 
 	input:
@@ -140,9 +153,8 @@ process searchMsgf {
 	
 	script:
 	"""
-	java -jar /home/biodocker/bin/MSGFPlus_9949/MSGFPlus.jar \
-	-d user.fasta -s ${mgf_file_msgf} -t ${params.prec_tol}ppm -ti 0,1 -thread ${threads} \
-	-tda 0 -inst 3 -e 1 -ntt ${params.mc} -mod ${msgf_mods} -minCharge 2 -maxCharge 4 
+	msgf_plus -d user.fasta -s ${mgf_file_msgf} -t ${params.prec_tol}ppm -ti 0,1 -thread ${threads} \
+	-tda 0 -inst 3 -e 1 -ntt ${params.mc} -mod ${msgf_mods} -minCharge ${params.min_charge} -maxCharge ${params.max_charge}
 	"""
 }
 
@@ -163,7 +175,7 @@ msgf_key = msgf_result.map { file ->
 combined_results = xtandem_key.combine(msgf_key, by: 0)
 
 process mergeSearchResults {
-	container 'biocontainers/pia:v1.3.8_cv1'
+	container 'ypriverol/pia:1.3.10'
 
 	input:
 	set val(mgf_name), file(xtandem_mzid), file(msgf_mzid) from combined_results
@@ -173,13 +185,15 @@ process mergeSearchResults {
 
 	script:
 	"""
-	java -cp /home/biodocker/pia/pia-1.3.8.jar de.mpc.pia.intermediate.compiler.PIACompiler \
-	-infile ${xtandem_mzid} -infile ${msgf_mzid} -name "${mgf_name}" -outfile ${mgf_name}.xml
+	pia compiler -infile ${xtandem_mzid} -infile ${msgf_mzid} -name "${mgf_name}" -outfile ${mgf_name}.xml
 	"""
 }
 
+/**
+ * Inference and filtering of the results
+ */
 process filterPiaResuls {
-	container 'biocontainers/pia:v1.3.8_cv1'
+	container 'ypriverol/pia:1.3.10'
 	publishDir "result"
 
 	input:
@@ -189,11 +203,8 @@ process filterPiaResuls {
 	output:
 	file "*.mzTab" into final_result
 
-	// TODO: Failed to download unimod.xml - use cached version
-
 	script:
 	"""
-	java -jar /home/biodocker/pia/pia-1.3.8.jar -infile ${pia_xml} -paramFile ${pia_config} \
-	-psmExport ${pia_xml}.mzTab mzTab
+	pia inference -infile ${pia_xml} -paramFile ${pia_config} -psmExport ${pia_xml}.mzTab mzTab
 	"""
 }
