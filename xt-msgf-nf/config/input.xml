@@ -19,6 +19,7 @@
 
 	<note type="input" label="output, path">ORG_NAME.xml</note>
 	<note type="input" label="output, mzid">yes</note>
+	<note type="input" label="output, path hashing">no</note>
 
 	<note type="input" label="output, maximum valid expectation value">1.0</note>
 	<note type="description">Disable any output filtering</note>
