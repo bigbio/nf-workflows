@@ -100,6 +100,7 @@ process searchTandem {
 
 	output:
         file "${mgf_file}.xml.mzid" into xtandem_result
+	file "${mgf_file}.xml" into xtandem_xml_result
 
 	script:
 	"""
