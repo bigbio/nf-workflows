@@ -25,8 +25,8 @@
         <NODE description="Adds a filter used by the protein inference. A filter is added by its name, an abbreviation for the comparison, the compared value and (optional), whether the comparison should be negatede.g. &quot;AddInferenceFilter=charge_filter,EQ,2,no&quot;" name="ProteinAddInferenceFilter">
             <ITEM value="psm_score_filter_psm_combined_fdr_score" type="string" name="filtername"/>
             <ITEM value="LEQ" type="string" name="comparison"/>
-            <ITEM value="0.01" type="string" name="value"/>
-            <!--<ITEM value="no" type="string" name="negate"/>-->
+            <ITEM value="0.1" type="string" name="value"/>
+            <ITEM value="no" type="string" name="negate"/>
         </NODE>
         <NODE description="Infers the proteins with the given inference method. Any inference filters should be set before this call with calls of AddInferenceFilter. The scoring method is set with the second argument. The scoring settings can be given by athird argument containing setting=value[;setting=value]* (usual settings are used_score and used_spectra)." name="ProteinInfereProteins">
             <ITEM value="inference_spectrum_extractor" type="string" name="inference"/>

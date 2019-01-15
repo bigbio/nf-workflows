@@ -91,6 +91,7 @@ process createTandemConfig {
  */
 process searchTandem {
 	container 'biocontainers/tandem:v17-02-01-4_cv4'
+	publishDir "result"
 
 	input:
 	file xtandem_settings
@@ -99,8 +100,8 @@ process searchTandem {
 	file mgf_file from mgf_files
 
 	output:
-        file "${mgf_file}.xml.mzid" into xtandem_result
-	//file "${mgf_file}.xml" into xtandem_xml_result
+    file "${mgf_file}.xml.mzid" into xtandem_result
+	file "${mgf_file}.xml" into xtandem_xml_result
 
 	script:
 	"""
@@ -163,8 +164,8 @@ process searchMsgf {
  * Combine the search results for every MGF files
  */
 // Change each result channel into a set with the base MGF name as the key
-xtandem_key = xtandem_result.map { file ->
-		(whole_name, index) = (file =~ /.*\/(.*)\.mgf\.xml\.mzid/)[0]
+xtandem_key = xtandem_xml_result.map { file ->
+		(whole_name, index) = (file =~ /.*\/(.*)\.mgf\.xml/)[0]
 		[index, file]
 	}
 msgf_key = msgf_result.map { file ->
@@ -177,6 +178,7 @@ combined_results = xtandem_key.combine(msgf_key, by: 0)
 
 process mergeSearchResults {
 	container 'ypriverol/pia:1.3.10'
+	publishDir "result"
 
 	input:
 	set val(mgf_name), file(xtandem_mzid), file(msgf_mzid) from combined_results
@@ -202,10 +204,10 @@ process filterPiaResuls {
 	file pia_config
 
 	output:
-	file "*.mzTab" into final_result
+	file "*.mztab" into final_result
 
 	script:
 	"""
-	pia inference -infile ${pia_xml} -paramFile ${pia_config} -psmExport ${pia_xml}.mzTab mzTab
+	pia inference -infile ${pia_xml} -paramFile ${pia_config} -proteinExport ${pia_xml}.mztab mzTab exportPSMs=true exportProteinSequences=true
 	"""
 }
