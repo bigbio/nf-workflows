@@ -208,6 +208,6 @@ process filterPiaResuls {
 
 	script:
 	"""
-	pia inference -infile ${pia_xml} -paramFile ${pia_config} -proteinExport ${pia_xml}.mztab mzTab exportPSMs=true exportProteinSequences=true
+	pia inference -infile ${pia_xml} -paramFile ${pia_config} -psmExport ${pia_xml}.mztab mzTab
 	"""
 }
