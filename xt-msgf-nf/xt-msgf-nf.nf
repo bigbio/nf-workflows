@@ -3,31 +3,37 @@
 /**
  * Input parameters
  */
-params.raw_dir = "${baseDir}/test"
-params.fasta_file = "${baseDir}/test/crap.fasta"
+params.mgf_dir = "${baseDir}/test"
+params.fasta_file = "${baseDir}/test/uniprot-human-reviewed.fasta"
 
 // X!Tandem template files should not be changed unless for very good reason.
 params.xtandem_template = "${baseDir}/config/input.xml"
 params.xtandem_taxonomy = "${baseDir}/config/taxonomy.xml"
+
+// MGF parameters
 params.msgf_mods = "${baseDir}/config/Mods.txt"
+
+// PIA Parameters
 params.pia_config = "${baseDir}/config/pia_config.xml"
+
+/**
+ * START General Parameters Settings
+ */
 
 // precursor tolerance can only be specified in ppm
 params.prec_tol = 10
 
 // fragment tolerance can only be specified in Th
-params.frag_tol = 0.5
+params.frag_tol = 0.1
 
 // missed cleavages
-params.mc = 1
-
-// TODO: specify a way to define PTMs
+params.mc = 2
 
 // number of threads per search engine
 threads = 1
 
 // minimun charge to be search
-params.min_charge = 2
+params.min_charge = 1
 
 // maximum charge to be search
 params.max_charge = 4
@@ -37,7 +43,7 @@ params.max_charge = 4
 /**
  * Create a channel for all MGF files
  **/
-(mgf_files, mgf_files_msgf) = Channel.fromPath("${params.raw_dir}/*.mgf").into(2)
+(mgf_files, mgf_files_msgf) = Channel.fromPath("${params.mgf_dir}/*.mgf").into(2)
 fasta_file = file(params.fasta_file)
 
 xtandem_template = file(params.xtandem_template)
