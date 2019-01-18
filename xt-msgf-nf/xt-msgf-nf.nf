@@ -122,6 +122,8 @@ process createMsgfDbIndex {
 	container 'quay.io/biocontainers/msgf_plus:2017.07.21--3'
 	// MSGF+ will raise an exception since the MGF file is empty
 	validExitStatus 0,1
+
+	memory '4 GB'
 	
 	input:
 	file "user.fasta" from fasta_decoy_db
@@ -147,6 +149,8 @@ process createMsgfDbIndex {
 process searchMsgf {
 	container 'quay.io/biocontainers/msgf_plus:2017.07.21--3'
 	publishDir "result"
+
+	memory '10 GB'
 
 	input:
 	file "user.fasta" from fasta_decoy_db
@@ -184,6 +188,8 @@ process mergeSearchResults {
 	container 'ypriverol/pia:1.3.10'
 	publishDir "result"
 
+	memory '10 GB'
+
 	input:
 	set val(mgf_name), file(xtandem_mzid), file(msgf_mzid) from combined_results
 
@@ -202,6 +208,8 @@ process mergeSearchResults {
 process filterPiaResuls {
 	container 'ypriverol/pia:1.3.10'
 	publishDir "result", mode: 'copy', overwrite: true
+
+	memory '10 GB'
 
 	input:
 	file pia_xml from pia_compilation
