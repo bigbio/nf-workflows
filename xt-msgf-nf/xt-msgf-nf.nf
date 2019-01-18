@@ -38,8 +38,6 @@ params.min_charge = 1
 // maximum charge to be search
 params.max_charge = 4
 
-
-
 /**
  * Create a channel for all MGF files
  **/
@@ -133,8 +131,8 @@ process createMsgfDbIndex {
 
 	script:
 	"""
-	touch /tmp/test.mgf
-	msgf_plus -s /tmp/test.mgf -d user.fasta -tda 0
+	touch ./temp.mgf
+	msgf_plus -s ./temp.mgf -d user.fasta -tda 0
 	"""
 }
 
@@ -203,7 +201,7 @@ process mergeSearchResults {
  */
 process filterPiaResuls {
 	container 'ypriverol/pia:1.3.10'
-	publishDir "result"
+	publishDir "result", mode: 'copy', overwrite: true
 
 	input:
 	file pia_xml from pia_compilation
