@@ -97,6 +97,8 @@ process searchTandem {
 	container 'biocontainers/tandem:v17-02-01-4_cv4'
 	publishDir "result"
 
+	memory '16 GB'
+
 	input:
 	file xtandem_settings
 	file xtandem_taxonomy
@@ -150,7 +152,7 @@ process searchMsgf {
 	container 'quay.io/biocontainers/msgf_plus:2017.07.21--3'
 	publishDir "result"
 
-	memory '10 GB'
+	memory '16 GB'
 
 	input:
 	file "user.fasta" from fasta_decoy_db
