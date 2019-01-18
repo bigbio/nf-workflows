@@ -165,7 +165,7 @@ process searchMsgf {
 	
 	script:
 	"""
-	msgf_plus -d user.fasta -s ${mgf_file_msgf} -t ${params.prec_tol}ppm -ti 0,1 -thread ${threads} \
+	msgf_plus -Xmx10g -d user.fasta -s ${mgf_file_msgf} -t ${params.prec_tol}ppm -ti 0,1 -thread ${threads} \
 	-tda 0 -inst 3 -e 1 -ntt ${params.mc} -mod ${msgf_mods} -minCharge ${params.min_charge} -maxCharge ${params.max_charge}
 	"""
 }
@@ -200,7 +200,7 @@ process mergeSearchResults {
 
 	script:
 	"""
-	pia compiler -infile ${xtandem_mzid} -infile ${msgf_mzid} -name "${mgf_name}" -outfile ${mgf_name}.xml
+	pia -Xmx10g compiler -infile ${xtandem_mzid} -infile ${msgf_mzid} -name "${mgf_name}" -outfile ${mgf_name}.xml
 	"""
 }
 
@@ -222,6 +222,6 @@ process filterPiaResuls {
 
 	script:
 	"""
-	pia inference -infile ${pia_xml} -paramFile ${pia_config} -psmExport ${pia_xml}.mztab mzTab
+	pia -Xmx10g inference -infile ${pia_xml} -paramFile ${pia_config} -psmExport ${pia_xml}.mztab mzTab
 	"""
 }
