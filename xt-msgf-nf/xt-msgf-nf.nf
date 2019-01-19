@@ -190,7 +190,7 @@ process mergeSearchResults {
 	container 'ypriverol/pia:1.3.10'
 	publishDir "result"
 
-	memory '10 GB'
+	memory '16 GB'
 
 	input:
 	set val(mgf_name), file(xtandem_mzid), file(msgf_mzid) from combined_results
@@ -211,7 +211,7 @@ process filterPiaResuls {
 	container 'ypriverol/pia:1.3.10'
 	publishDir "result", mode: 'copy', overwrite: true
 
-	memory '10 GB'
+	memory '16 GB'
 
 	input:
 	file pia_xml from pia_compilation

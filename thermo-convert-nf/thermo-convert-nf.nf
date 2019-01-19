@@ -1,6 +1,7 @@
 #!/usr/bin/env nextflow
 
 params.px_accession = "PXD000801"
+params.file_output = 1
 
 process downloadFiles {
     container 'quay.io/biocontainers/gnu-wget:1.18--3'
@@ -30,3 +31,4 @@ process generateMetadata {
     """
     ThermoRawFileParser -i=${rawFile} -m=0 -f=1 -o=./
     """
+}
