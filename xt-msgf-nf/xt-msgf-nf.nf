@@ -97,7 +97,7 @@ process searchTandem {
 	container 'biocontainers/tandem:v17-02-01-4_cv4'
 	publishDir "result"
 
-	memory '16 GB'
+	memory '5 GB'
 
 	input:
 	file xtandem_settings
