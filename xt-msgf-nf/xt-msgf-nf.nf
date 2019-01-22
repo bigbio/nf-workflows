@@ -108,6 +108,7 @@ process searchTandem {
 	output:
     file "${mgf_file}.xml.mzid" into xtandem_result
 	file "${mgf_file}.xml" into xtandem_xml_result
+	file "${mgf_file}.xml" into all_xtandem_result
 
 	script:
 	"""
@@ -152,7 +153,8 @@ process searchMsgf {
 	container 'quay.io/biocontainers/msgf_plus:2017.07.21--3'
 	publishDir "result"
 
-	memory '16 GB'
+	memory { 16.GB * task.attempt }
+    errorStrategy 'retry'
 
 	input:
 	file "user.fasta" from fasta_decoy_db
@@ -162,10 +164,11 @@ process searchMsgf {
 
 	output:
 	file "*.mzid" into msgf_result
-	
+	file "*.mzid" into all_msgf_result
+
 	script:
 	"""
-	msgf_plus -Xmx10g -d user.fasta -s ${mgf_file_msgf} -t ${params.prec_tol}ppm -ti 0,1 -thread ${threads} \
+	msgf_plus -Xmx${10 * task.attempt}g -d user.fasta -s ${mgf_file_msgf} -t ${params.prec_tol}ppm -ti 0,1 -thread ${threads} \
 	-tda 0 -inst 3 -e 1 -ntt ${params.mc} -mod ${msgf_mods} -minCharge ${params.min_charge} -maxCharge ${params.max_charge}
 	"""
 }
@@ -190,7 +193,8 @@ process mergeSearchResults {
 	container 'ypriverol/pia:1.3.10'
 	publishDir "result"
 
-	memory '16 GB'
+	memory { 16.GB * task.attempt }
+    errorStrategy 'retry'
 
 	input:
 	set val(mgf_name), file(xtandem_mzid), file(msgf_mzid) from combined_results
@@ -200,18 +204,19 @@ process mergeSearchResults {
 
 	script:
 	"""
-	pia -Xmx10g compiler -infile ${xtandem_mzid} -infile ${msgf_mzid} -name "${mgf_name}" -outfile ${mgf_name}.xml
+	pia -Xmx${10 * task.attempt}g compiler -infile ${xtandem_mzid} -infile ${msgf_mzid} -name "${mgf_name}" -outfile ${mgf_name}.xml
 	"""
 }
 
 /**
  * Inference and filtering of the results
  */
-process filterPiaResuls {
+process filterPiaResults {
 	container 'ypriverol/pia:1.3.10'
 	publishDir "result", mode: 'copy', overwrite: true
 
-	memory '16 GB'
+	memory { 16.GB * task.attempt }
+    errorStrategy 'retry'
 
 	input:
 	file pia_xml from pia_compilation
@@ -222,6 +227,57 @@ process filterPiaResuls {
 
 	script:
 	"""
-	pia -Xmx10g inference -infile ${pia_xml} -paramFile ${pia_config} -psmExport ${pia_xml}.mztab mzTab
+	pia -Xmx${10 * task.attempt}g inference -infile ${pia_xml} -paramFile ${pia_config} -psmExport ${pia_xml}.mztab mzTab
 	"""
 }
+
+/**
+ * Collect all the files from search engines.
+ */
+
+all_search_files = all_msgf_result.concat(all_xtandem_result)
+
+/**
+ * Compile all the results in to one xml file.
+ */
+ process mergeCompleteSearchResults {
+ 	container 'ypriverol/pia:1.3.10'
+ 	publishDir "result"
+
+ 	memory { 16.GB * task.attempt }
+    errorStrategy 'retry'
+
+ 	input:
+ 	file(input_files) from all_search_files.collect()
+
+ 	output:
+ 	file "*.xml" into merged_pia_compilation
+
+ 	script:
+ 	"""
+ 	pia -Xmx${10 * task.attempt}g compiler -infile ${(input_files as List).join(" -infile ")} -name pia-fina-complete -outfile pia-final-merged.xml
+ 	"""
+ }
+
+ /**
+  * Inference and filtering the final mztab results
+  */
+ process filterPiaCompleteResults {
+ 	container 'ypriverol/pia:1.3.10'
+ 	publishDir "result", mode: 'copy', overwrite: true
+
+ 	memory { 16.GB * task.attempt }
+     errorStrategy 'retry'
+
+ 	input:
+ 	file pia_xml from merged_pia_compilation
+ 	file pia_config
+
+ 	output:
+ 	file "*.mztab" into complete_final_result
+
+ 	script:
+ 	"""
+ 	pia -Xmx${10 * task.attempt}g inference -infile ${pia_xml} -paramFile ${pia_config} -psmExport ${pia_xml}.mztab mzTab
+ 	"""
+ }
