@@ -244,8 +244,9 @@ all_search_files = all_msgf_result.concat(all_xtandem_result)
  	container 'ypriverol/pia:1.3.10'
  	publishDir "result"
 
- 	memory { 16.GB * task.attempt }
+ 	memory { 60.GB * task.attempt }
     errorStrategy 'retry'
+    maxRetries 3
 
  	input:
  	file(input_files) from all_search_files.collect()
@@ -255,7 +256,7 @@ all_search_files = all_msgf_result.concat(all_xtandem_result)
 
  	script:
  	"""
- 	pia -Xmx${10 * task.attempt}g compiler -infile ${(input_files as List).join(" -infile ")} -name pia-fina-complete -outfile pia-final-merged.xml
+ 	pia -Xmx${40 * task.attempt}g compiler -infile ${(input_files as List).join(" -infile ")} -name pia-fina-complete -outfile pia-final-merged.xml
  	"""
  }
 
@@ -266,8 +267,9 @@ all_search_files = all_msgf_result.concat(all_xtandem_result)
  	container 'ypriverol/pia:1.3.10'
  	publishDir "result", mode: 'copy', overwrite: true
 
- 	memory { 16.GB * task.attempt }
-     errorStrategy 'retry'
+ 	memory { 60.GB * task.attempt }
+    errorStrategy 'retry'
+    maxRetries 3
 
  	input:
  	file pia_xml from merged_pia_compilation
@@ -278,6 +280,6 @@ all_search_files = all_msgf_result.concat(all_xtandem_result)
 
  	script:
  	"""
- 	pia -Xmx${10 * task.attempt}g inference -infile ${pia_xml} -paramFile ${pia_config} -psmExport ${pia_xml}.mztab mzTab
+ 	pia -Xmx${40 * task.attempt}g inference -infile ${pia_xml} -paramFile ${pia_config} -psmExport ${pia_xml}.mztab mzTab
  	"""
  }
