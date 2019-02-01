@@ -6,9 +6,7 @@
 params.mgf_dir = "${baseDir}/test"
 params.fasta_file = "${baseDir}/test/uniprot-human-reviewed.fasta"
 
-// X!Tandem template files should not be changed unless for very good reason.
-params.xtandem_template = "${baseDir}/config/input.xml"
-params.xtandem_taxonomy = "${baseDir}/config/taxonomy.xml"
+params.tide_config = "${baseDir}/config/tide_config.txt"
 
 // MGF parameters
 params.msgf_mods = "${baseDir}/config/Mods.txt"
@@ -41,11 +39,10 @@ params.max_charge = 4
 /**
  * Create a channel for all MGF files
  **/
-(mgf_files, mgf_files_msgf) = Channel.fromPath("${params.mgf_dir}/*.mgf").into(2)
+(mgf_files, mgf_files_2) = Channel.fromPath("${params.mgf_dir}/*.mgf").into(2)
 fasta_file = file(params.fasta_file)
 
-xtandem_template = file(params.xtandem_template)
-xtandem_taxonomy = file(params.xtandem_taxonomy)
+tide_config_file = file(params.tide_config)
 msgf_mods = file(params.msgf_mods)
 pia_config = file(params.pia_config)
 
@@ -71,63 +68,12 @@ process createDecoyDb {
 }
 
 /**
- * Create the configuration file required to launch X!Tandem
- */
-process createTandemConfig {
-	input:
-	file "settings.xml" from xtandem_template
-
-	output:
-	file "adapted_settings.xml" into xtandem_settings
-
-	script:
-	"""
-	sed -e 's|FRAG_TOL|${params.frag_tol}|' \
-	    -e 's|PREC_TOL|${params.prec_tol}|' \
-	    -e 's|MISSED_CLEAV|${params.mc}|' \
-	    -e 's|THREADS|$threads|' \
-	    ${xtandem_template} > adapted_settings.xml
-	"""
-}
-
-/**
- * Search every MGF file using X!Tandem
- */
-process searchTandem {
-	container 'biocontainers/tandem:v17-02-01-4_cv4'
-	publishDir "result"
-
-	memory '5 GB'
-
-	input:
-	file xtandem_settings
-	file xtandem_taxonomy
-	file fasta_decoy_db
-	file mgf_file from mgf_files
-
-	output:
-    file "${mgf_file}.xml.mzid" into xtandem_result
-	file "${mgf_file}.xml" into xtandem_xml_result
-	file "${mgf_file}.xml" into all_xtandem_result
-
-	script:
-	"""
-	sed -e 's|ORG_NAME|${mgf_file}|' ${xtandem_settings} > ${mgf_file}.settings.xml && \
-	tandem ${mgf_file}.settings.xml && \
-	sed -i 's|value="^XXX"|value="_REVERSED"|' ${mgf_file}.xml.mzid
-	"""
-}
-
-/**
  * Create the MSGF+ database index
  */
 process createMsgfDbIndex {
 	container 'quay.io/biocontainers/msgf_plus:2017.07.21--3'
-	// MSGF+ will raise an exception since the MGF file is empty
-	validExitStatus 0,1
-
 	memory '4 GB'
-
+	
 	input:
 	file "user.fasta" from fasta_decoy_db
 
@@ -136,14 +82,13 @@ process createMsgfDbIndex {
 
 	script:
 	"""
-	touch ./temp.mgf
-	msgf_plus -s ./temp.mgf -d user.fasta -tda 0
+	msgf_plus edu.ucsd.msjava.msdbsearch.BuildSA -d user.fasta -tda 0
 	"""
 }
 
 /**
  * Search every MGF file using MSGF+
- *
+ * 
  * Notes on parameters:
  *   * -inst 3 = QExactive, 1 = Orbitrap
  *   * -e 1 = Trypsin
@@ -153,23 +98,60 @@ process searchMsgf {
 	container 'quay.io/biocontainers/msgf_plus:2017.07.21--3'
 	publishDir "result"
 
-	memory { 16.GB * task.attempt }
-    errorStrategy 'retry'
+	memory { 4.GB * task.attempt }
+    	errorStrategy 'retry'
 
 	input:
 	file "user.fasta" from fasta_decoy_db
 	file msgf_fasta_index
-	file mgf_file_msgf from mgf_files_msgf
+	file mgf_file_msgf from mgf_files
 	file msgf_mods
 
 	output:
-	file "*.mzid" into msgf_result
-	file "*.mzid" into all_msgf_result
+	file "*.mzid" into msgf_result, all_msgf_result
 
 	script:
 	"""
-	msgf_plus -Xmx${10 * task.attempt}g -d user.fasta -s ${mgf_file_msgf} -t ${params.prec_tol}ppm -ti 0,1 -thread ${threads} \
+	msgf_plus -Xmx${4 * task.attempt}g -d user.fasta -s ${mgf_file_msgf} -t ${params.prec_tol}ppm -ti 0,1 -thread ${threads} \
 	-tda 0 -inst 3 -e 1 -ntt ${params.mc} -mod ${msgf_mods} -minCharge ${params.min_charge} -maxCharge ${params.max_charge}
+	"""
+}
+
+process createTideIndex {
+	container 'containers.biocontainers.pro/biocontainers/crux:v2.1_cv2.588'
+
+	input:
+	file fasta_decoy_db
+	file tide_config_file
+
+	output:
+	file "fasta-index/*" into fasta_tide_index
+
+	script:
+	"""
+	crux tide-index --parameter-file "${tide_config_file}" "${fasta_decoy_db}" fasta-index
+	"""
+}
+
+process searchTide {
+	container 'containers.biocontainers.pro/biocontainers/crux:v2.1_cv2.588'
+	publishDir "result"
+
+	input:
+	file fasta_tide_index
+	file mgf_file from mgf_files_2
+
+	output:
+	file "*.mzid" into tide_result, all_tide_result
+
+	script:
+	"""
+	mkdir fasta-index
+	mv ${fasta_tide_index} fasta-index/
+	crux tide-search --parameter-file "${tide_config_file}" "${mgf_file}" fasta-index
+
+	# move and rename the result file
+	mv crux-output/tide-search.mzid ${mgf_file}.tide.mzid
 	"""
 }
 
@@ -177,8 +159,8 @@ process searchMsgf {
  * Combine the search results for every MGF files
  */
 // Change each result channel into a set with the base MGF name as the key
-xtandem_key = xtandem_xml_result.map { file ->
-		(whole_name, index) = (file =~ /.*\/(.*)\.mgf\.xml/)[0]
+tide_key = tide_result.map { file ->
+		(whole_name, index) = (file =~ /.*\/(.*)\.mgf\.tide.mzid/)[0]
 		[index, file]
 	}
 msgf_key = msgf_result.map { file ->
@@ -187,7 +169,7 @@ msgf_key = msgf_result.map { file ->
 	}
 
 // merge the results based on the MGF filename as key
-combined_results = xtandem_key.combine(msgf_key, by: 0)
+combined_results = tide_key.combine(msgf_key, by: 0)
 
 process mergeSearchResults {
 	container 'ypriverol/pia:1.3.10'
@@ -197,14 +179,14 @@ process mergeSearchResults {
     errorStrategy 'retry'
 
 	input:
-	set val(mgf_name), file(xtandem_mzid), file(msgf_mzid) from combined_results
+	set val(mgf_name), file(tide_mzid), file(msgf_mzid) from combined_results
 
 	output:
 	file "${mgf_name}.xml" into pia_compilation
 
 	script:
 	"""
-	pia -Xmx${10 * task.attempt}g compiler -infile ${xtandem_mzid} -infile ${msgf_mzid} -name "${mgf_name}" -outfile ${mgf_name}.xml
+	pia -Xmx${10 * task.attempt}g compiler -infile ${tide_mzid} -infile ${msgf_mzid} -name "${mgf_name}" -outfile ${mgf_name}.xml
 	"""
 }
 
@@ -235,7 +217,7 @@ process filterPiaResults {
  * Collect all the files from search engines.
  */
 
-all_search_files = all_msgf_result.concat(all_xtandem_result)
+all_search_files = all_msgf_result.concat(all_tide_result)
 
 /**
  * Compile all the results in to one xml file.
@@ -244,9 +226,8 @@ all_search_files = all_msgf_result.concat(all_xtandem_result)
  	container 'ypriverol/pia:1.3.10'
  	publishDir "result"
 
- 	memory { 60.GB * task.attempt }
+ 	memory { 16.GB * task.attempt }
     errorStrategy 'retry'
-    maxRetries 3
 
  	input:
  	file(input_files) from all_search_files.collect()
@@ -256,7 +237,7 @@ all_search_files = all_msgf_result.concat(all_xtandem_result)
 
  	script:
  	"""
- 	pia -Xmx${40 * task.attempt}g compiler -infile ${(input_files as List).join(" -infile ")} -name pia-fina-complete -outfile pia-final-merged.xml
+ 	pia -Xmx${10 * task.attempt}g compiler -infile ${(input_files as List).join(" -infile ")} -name pia-fina-complete -outfile pia-final-merged.xml
  	"""
  }
 
@@ -267,9 +248,8 @@ all_search_files = all_msgf_result.concat(all_xtandem_result)
  	container 'ypriverol/pia:1.3.10'
  	publishDir "result", mode: 'copy', overwrite: true
 
- 	memory { 60.GB * task.attempt }
-    errorStrategy 'retry'
-    maxRetries 3
+ 	memory { 16.GB * task.attempt }
+     errorStrategy 'retry'
 
  	input:
  	file pia_xml from merged_pia_compilation
@@ -280,6 +260,6 @@ all_search_files = all_msgf_result.concat(all_xtandem_result)
 
  	script:
  	"""
- 	pia -Xmx${40 * task.attempt}g inference -infile ${pia_xml} -paramFile ${pia_config} -psmExport ${pia_xml}.mztab mzTab
+ 	pia -Xmx${10 * task.attempt}g inference -infile ${pia_xml} -paramFile ${pia_config} -psmExport ${pia_xml}.mztab mzTab
  	"""
  }

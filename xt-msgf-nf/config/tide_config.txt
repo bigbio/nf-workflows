@@ -1,0 +1,43 @@
+# General options
+# ---------------------------------------
+mods-spec=C+57.02146,2M+15.994915
+nterm-peptide-mods-spec=1X+42.010565
+missed-cleavages=2
+
+# Library index specific options
+# -----------------------------------------
+decoy-format=none
+
+# Search specific options
+# -----------------------------------------
+
+compute-sp=T
+mzid-output=T
+exact-p-value=T
+
+# Set for high-resolution (MS2) data
+# mz-bin-width=0.02
+# Set for low-resolution (MS2) data
+mz-bin-width=1.0005079
+
+# Set to "xcorr" for only sequest scoring or "residue-evidence" for 
+# high-resolution data. Can also be set to "both"
+score-function=xcorr
+
+# Only relevant for "residue-evidence". Set to 0.02 for high-res data
+# fragment-tolerance=0.02
+
+remove-precursor-peak=T
+remove-precursor-tolerance=1.5
+
+num-threads=1
+
+# Output specific options
+# --------------------------------
+output-dir=crux-output
+overwrite=T
+# Disable search progress output
+print-search-progress=0
+top-match=5
+txt-output=F
+
