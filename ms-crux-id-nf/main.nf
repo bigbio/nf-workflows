@@ -8,7 +8,8 @@ spectra = file(params.spectra)
 
 
 process indexPeptides {
-    container 'containers.biocontainers.pro/biocontainers/crux:v2.1_cv2.588'
+    container 'ypriverol/crux:3.2'
+    publishDir "data/"
     
     input:
     file 'small-yeast.fasta' from peptides
@@ -21,7 +22,7 @@ process indexPeptides {
     script:
     """
     crux tide-index small-yeast.fasta yeast-index
-    crux tide-search --compute-sp T demo.ms2 yeast-index
+    crux tide-search --compute-sp T --mzid-output T demo.ms2 yeast-index
     """
 }
 

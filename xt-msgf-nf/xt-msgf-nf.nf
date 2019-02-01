@@ -115,7 +115,7 @@ process searchTandem {
 	sed -e 's|ORG_NAME|${mgf_file}|' ${xtandem_settings} > ${mgf_file}.settings.xml && \
 	tandem ${mgf_file}.settings.xml && \
 	sed -i 's|value="^XXX"|value="_REVERSED"|' ${mgf_file}.xml.mzid
-	"""	
+	"""
 }
 
 /**
@@ -127,7 +127,7 @@ process createMsgfDbIndex {
 	validExitStatus 0,1
 
 	memory '4 GB'
-	
+
 	input:
 	file "user.fasta" from fasta_decoy_db
 
@@ -143,7 +143,7 @@ process createMsgfDbIndex {
 
 /**
  * Search every MGF file using MSGF+
- * 
+ *
  * Notes on parameters:
  *   * -inst 3 = QExactive, 1 = Orbitrap
  *   * -e 1 = Trypsin

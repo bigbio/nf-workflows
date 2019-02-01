@@ -22,3 +22,5 @@ nf-test/
 
 .nextflow*
 trace*
+*results*
+*report.html*
