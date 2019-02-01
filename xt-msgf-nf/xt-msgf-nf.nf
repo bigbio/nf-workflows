@@ -118,7 +118,8 @@ process searchMsgf {
 }
 
 process createTideIndex {
-	container 'containers.biocontainers.pro/biocontainers/crux:v2.1_cv2.588'
+	container 'biocontainers/crux:v3.2_cv3'
+	memory { 4.GB }
 
 	input:
 	file fasta_decoy_db
@@ -134,7 +135,8 @@ process createTideIndex {
 }
 
 process searchTide {
-	container 'containers.biocontainers.pro/biocontainers/crux:v2.1_cv2.588'
+	container 'biocontainers/crux:v3.2_cv3'
+	memory { 4.GB }
 	publishDir "result"
 
 	input:
@@ -142,7 +144,7 @@ process searchTide {
 	file mgf_file from mgf_files_2
 
 	output:
-	file "*.mzid" into tide_result, all_tide_result
+	file "*.txt" into tide_result, all_tide_result
 
 	script:
 	"""
@@ -151,7 +153,7 @@ process searchTide {
 	crux tide-search --parameter-file "${tide_config_file}" "${mgf_file}" fasta-index
 
 	# move and rename the result file
-	mv crux-output/tide-search.mzid ${mgf_file}.tide.mzid
+	mv crux-output/tide-search.txt ${mgf_file}.tide.txt
 	"""
 }
 
@@ -160,7 +162,7 @@ process searchTide {
  */
 // Change each result channel into a set with the base MGF name as the key
 tide_key = tide_result.map { file ->
-		(whole_name, index) = (file =~ /.*\/(.*)\.mgf\.tide.mzid/)[0]
+		(whole_name, index) = (file =~ /.*\/(.*)\.mgf\.tide.txt/)[0]
 		[index, file]
 	}
 msgf_key = msgf_result.map { file ->

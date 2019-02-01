@@ -12,7 +12,8 @@ decoy-format=none
 # -----------------------------------------
 
 compute-sp=T
-mzid-output=T
+#mzid-output=T
+concat=T
 exact-p-value=T
 
 # Set for high-resolution (MS2) data
@@ -22,7 +23,7 @@ mz-bin-width=1.0005079
 
 # Set to "xcorr" for only sequest scoring or "residue-evidence" for 
 # high-resolution data. Can also be set to "both"
-score-function=xcorr
+#score-function=xcorr
 
 # Only relevant for "residue-evidence". Set to 0.02 for high-res data
 # fragment-tolerance=0.02
@@ -30,7 +31,7 @@ score-function=xcorr
 remove-precursor-peak=T
 remove-precursor-tolerance=1.5
 
-num-threads=1
+#num-threads=1
 
 # Output specific options
 # --------------------------------

@@ -9,7 +9,7 @@
             <ITEM value="msgf_specevalue" type="string" name="score name"/>
         </NODE>
         <NODE description="Adds the given score name to the list of preferred scores for FDR calculation." name="PSMAddPreferredFDRScore">
-            <ITEM value="xtandem_expect" type="string" name="score name"/>
+            <ITEM value="sequest_xcorr" type="string" name="score name"/>
         </NODE>
         <NODE description="Sets the number of top identifications per spectrum used for all further FDR calculations, 0 meaning all identifications are used." name="PSMSetAllTopidentificationsForFDR">
             <ITEM value="0" type="string" name="number of top identifications"/>
