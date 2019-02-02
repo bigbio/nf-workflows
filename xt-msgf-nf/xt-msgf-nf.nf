@@ -176,19 +176,20 @@ combined_results = tide_key.combine(msgf_key, by: 0)
 process mergeSearchResults {
 	container 'ypriverol/pia:1.3.10'
 	publishDir "result"
+	publishDir "result", mode: 'copy', overwrite: true
 
 	memory { 16.GB * task.attempt }
     errorStrategy 'retry'
 
 	input:
-	set val(mgf_name), file(tide_mzid), file(msgf_mzid) from combined_results
+	set val(mgf_name), file(tide_txt), file(msgf_mzid) from combined_results
 
 	output:
 	file "${mgf_name}.xml" into pia_compilation
 
 	script:
 	"""
-	pia -Xmx${10 * task.attempt}g compiler -infile ${tide_mzid} -infile ${msgf_mzid} -name "${mgf_name}" -outfile ${mgf_name}.xml
+	pia -Xmx${10 * task.attempt}g compiler -infile ${tide_txt} -infile ${msgf_mzid} -name "${mgf_name}" -outfile ${mgf_name}.xml
 	"""
 }
 
