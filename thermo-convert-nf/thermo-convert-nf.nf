@@ -1,17 +1,29 @@
 #!/usr/bin/env nextflow
 
-params.px_accession = "PXD000801"
-params.file_output = 1
+params.px_accession = ""
+
+process findProjectPath {
+
+    output:
+    file 'project_path.txt' into public_dataset_path
+
+    """
+    python ../../../scripts/Project.py $params.px_accession
+    """
+}
 
 process downloadFiles {
     container 'quay.io/biocontainers/gnu-wget:1.18--3'
+
+    input:
+    file directory from public_dataset_path.flatten()
 
     output:
     file '*.raw' into rawFiles
 
     script:
     """
-    wget -v -r -nd -A "*.raw" --no-host-directories --cut-dirs=1 ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2018/09/PXD010376/
+    wget -v -r -nd -A "Campy_X2_Fr01.raw" --no-host-directories --cut-dirs=1 `cat $directory`
     """
 }
 
@@ -31,4 +43,12 @@ process generateMetadata {
     """
     ThermoRawFileParser -i=${rawFile} -m=0 -f=1 -o=./
     """
+}
+
+public_dataset_path.subscribe {
+    println it
+}
+
+metaResults.subscribe {
+    println it
 }
