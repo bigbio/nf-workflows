@@ -12,7 +12,7 @@ decoy-format=none
 # -----------------------------------------
 
 compute-sp=T
-#mzid-output=T
+mzid-output=T
 concat=T
 exact-p-value=T
 
