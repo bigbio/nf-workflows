@@ -42,6 +42,8 @@ process peptideIdentification {
    container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq'
    publishDir "results", mode: 'copy', overwrite: true
 
+   memory { 10.GB * task.attempt }
+
    input:
    file mz_ml from mz_files
    file "database.fasta" from fasta_file
@@ -52,6 +54,6 @@ process peptideIdentification {
 
    script:
    """
-   MSGFPlusAdapter -ini "${id_config}" -database database.fasta -in ${mz_ml} -out ${mz_ml}.idXML
+   MSGFPlusAdapter -ini "${id_config}" -database database.fasta -in ${mz_ml} -out ${mz_ml.baseName}.idXML
    """
 }
