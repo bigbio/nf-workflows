@@ -31,8 +31,12 @@
  *
  */
 
-mz_files     = Channel.fromPath("${params.raw_folder}/*.mzML")
+(mz_files, mz_result_files) = Channel.fromPath("${params.raw_folder}/*.mzML").into(2)
 fasta_file   = file(params.fasta)
+
+/*
+ * Config files for each processing step
+ */
 id_config    = file(params.id_config)
 index_config = file(params.index_config)
 fdr_config   = file(params.fdr_config)
@@ -58,7 +62,7 @@ process peptideIdentification {
 
    script:
    """
-   MSGFPlusAdapter -ini "${id_config}" -database database.fasta -in ${mz_ml} -out ${mz_ml.baseName}.idXML
+   MSGFPlusAdapter -ini "${id_config}" -database database.fasta -in ${mz_ml} -out ${mz_ml}.idXML
    """
 }
 
@@ -80,9 +84,8 @@ process peptideIndexer {
 
    script:
    """
-   PeptideIndexer -ini "${index_config}" -fasta database.fasta -in ${id_xml} -out ${id_xml.baseName}-indexed.idXML
+   PeptideIndexer -ini "${index_config}" -fasta database.fasta -in ${id_xml} -out ${id_xml.baseName}-index.idXML
    """
-
 }
 
 
@@ -121,11 +124,35 @@ process peptideFDRFilter {
    file idfilter_config
 
    output:
-   file "*.idXML" into index_xmls
+   file "*.idXML" into peptide_xmls
 
    script:
    """
-   IDFilter -ini "${idfilter_config}" -in ${fdr_xml} -out ${fdr.baseName}-fdr.idXML
+   IDFilter -ini "${idfilter_config}" -in ${fdr_xml} -out ${fdr_xml.baseName}-filter.idXML
    """
 }
 
+(mzMLs, mzML_print) = mz_result_files.map { file -> tuple(file.name, file)}.into(2)
+(peptide_collection, peptide_print) = peptide_xmls.map { file -> tuple(file.baseName.replaceFirst("-index-fdr-filter",""), file)}.into(2)
+(combined_results, print_combined) = mzMLs.combine(peptide_collection, by: 0).into(2)
+
+
+mzML_print.subscribe{ println "value: $it"}
+peptide_print.subscribe{ println "value: $it"}
+print_combined.subscribe{ println "value: $it"}
+
+process idQualityControl{
+   container 'mwalzer/openms-batteries-included:V2.3.0_pepxmlpatch'
+   publishDir "results", mode: 'copy', overwrite: true
+
+   input:
+   set val(mzML), file(mzML_file), file(idx_file) from combined_results
+
+   output:
+   file "*.qcML" into qc_MLs
+
+   script:
+   """
+   QCCalculator -in ${mzML_file} -id ${idx_file} -out ${mzML}.qcML
+   """
+}
