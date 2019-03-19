@@ -124,11 +124,30 @@ process peptideFDRFilter {
    file idfilter_config
 
    output:
-   file "*.idXML" into peptide_xmls
+   file "*.idXML" into peptide_xmls, peptide_convert_xmls
 
    script:
    """
    IDFilter -ini "${idfilter_config}" -in ${fdr_xml} -out ${fdr_xml.baseName}-filter.idXML
+   """
+}
+
+
+process convertMZIdML{
+
+   container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq'
+   publishDir "results", mode: 'copy', overwrite: true
+
+   input:
+   file filter_file from peptide_convert_xmls
+
+
+   output:
+   file "*.mzid" into peptide_mzids
+
+   script:
+   """
+   IDFileConverter -in ${filter_file} -out ${filter_file.baseName}.mzid
    """
 }
 
@@ -155,4 +174,25 @@ process idQualityControl{
    """
    QCCalculator -in ${mzML_file} -id ${idx_file} -out ${mzML}.qcML
    """
+}
+
+
+process plotQualityControl{
+
+  container 'mwalzer/qc-plotter:latest'
+  publishDir "results", mode: 'copy', overwrite: true
+
+  input:
+  file qc_ML from qc_MLs
+
+  output:
+  file "*.png" into plots
+
+  script:
+  """
+  qc_plot.sh -fracmass ${qc_ML}
+  """
+
+
+
 }
