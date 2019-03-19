@@ -176,6 +176,13 @@ process idQualityControl{
    """
 }
 
+qc_tool_parameters = ['fracmass', 'auctic', 'charge_histogram', 'dppm', 'dppm_time', 'dppm_percentiles', 'esiinstability', 'gravy',
+                                  'idmap', 'id_oversampling', 'lengthdistro', 'ms1peakcount', 'ms2peakcount', 'repeatid',
+                                  'rt_events',  'tic', 'ticric', 'topn']
+
+/**
+ * 'ms1sn', 'ms2sn', 'sn'
+ */
 
 process plotQualityControl{
 
@@ -184,13 +191,15 @@ process plotQualityControl{
 
   input:
   file qc_ML from qc_MLs
+  each param from qc_tool_parameters
+
 
   output:
   file "*.png" into plots
 
   script:
   """
-  qc_plot.sh -fracmass ${qc_ML}
+  qc_plot.sh -$param ${qc_ML}
   """
 
 
