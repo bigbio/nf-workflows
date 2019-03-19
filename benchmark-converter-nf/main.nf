@@ -13,6 +13,7 @@
  *   --index_config Peptide indexer config file.
  *   --fdr_config The FDR config provides the parameters to filter peptides/proteins
  *   --idfilter_config The Identification filter config
+ *   --result_folder Export to the following folder the results.
  *
  */
 
@@ -42,13 +43,16 @@ index_config = file(params.index_config)
 fdr_config   = file(params.fdr_config)
 idfilter_config = file(params.idfilter_config)
 
+params.result_folder ='results'
+result_folder = params.result_folder
+
 /**
  * Identification step using MSGF+
  */
 process peptideIdentification {
 
    container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq'
-   publishDir "results", mode: 'copy', overwrite: true
+   publishDir "${params.result_folder}", mode: 'copy', overwrite: true
 
    memory { 10.GB * task.attempt }
 
@@ -72,7 +76,7 @@ process peptideIdentification {
 process peptideIndexer {
 
    container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq'
-   publishDir "results", mode: 'copy', overwrite: true
+   publishDir "${params.result_folder}", mode: 'copy', overwrite: true
 
    input:
    file id_xml from id_xmls
@@ -95,7 +99,7 @@ process peptideIndexer {
 process peptideFDRCompute {
 
    container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq'
-   publishDir "results", mode: 'copy', overwrite: true
+   publishDir "${params.result_folder}", mode: 'copy', overwrite: true
 
    input:
    file index_xml from index_xmls
@@ -117,7 +121,7 @@ process peptideFDRCompute {
 process peptideFDRFilter {
 
    container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq'
-   publishDir "results", mode: 'copy', overwrite: true
+   publishDir "${params.result_folder}", mode: 'copy', overwrite: true
 
    input:
    file fdr_xml from fdr_xmls
@@ -136,7 +140,7 @@ process peptideFDRFilter {
 process convertMZIdML{
 
    container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq'
-   publishDir "results", mode: 'copy', overwrite: true
+   publishDir "${params.result_folder}", mode: 'copy', overwrite: true
 
    input:
    file filter_file from peptide_convert_xmls
@@ -162,7 +166,7 @@ print_combined.subscribe{ println "value: $it"}
 
 process idQualityControl{
    container 'mwalzer/openms-batteries-included:V2.3.0_pepxmlpatch'
-   publishDir "results", mode: 'copy', overwrite: true
+   publishDir "${params.result_folder}", mode: 'copy', overwrite: true
 
    input:
    set val(mzML), file(mzML_file), file(idx_file) from combined_results
@@ -187,7 +191,7 @@ qc_tool_parameters = ['fracmass', 'auctic', 'charge_histogram', 'dppm', 'dppm_ti
 process plotQualityControl{
 
   container 'mwalzer/qc-plotter:latest'
-  publishDir "results", mode: 'copy', overwrite: true
+  publishDir "${params.result_folder}", mode: 'copy', overwrite: true
 
   input:
   file qc_ML from qc_MLs
@@ -201,7 +205,5 @@ process plotQualityControl{
   """
   qc_plot.sh -$param ${qc_ML}
   """
-
-
 
 }
