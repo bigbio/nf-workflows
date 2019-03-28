@@ -1,42 +1,57 @@
 #!/usr/bin/env nextflow
 
+/*
+========================================================================================
+                 Metadata Extraction Workflow for PRIDE Data
+========================================================================================
+ @#### Authors
+ Yasset Perez-Riverol <ypriverol@gmail.com>
+ Suresh Hewapathirana <sureshhewabi@gmail.com>
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+Pipeline overview:
+ - 1:   Find the PRIDE FTP project path and Download all the raw files from FTP
+ - 2:   Converting the RAW data into mzML files and extract the metadata for the mzML files and the RAW files
+ - 3:   Format metadata into proper JSON format
+ - 4:   Push metadata to the database
+ - 5:   Clear Working directories
+
+ ----------------------------------------------------------------------------------------
+*/
+
+/*
+ * Define the default parameters
+ */
 params.px_accession = ""
-
-process findProjectPath {
-
-    output:
-    file 'project_path.txt' into public_dataset_path
-
-    """
-    python ../../../scripts/Project.py $params.px_accession
-    """
-}
+params.script_path = "/Users/hewapathirana/PRIDE/Repositories/Nextflow/thermo-convert-nf/scripts"
 
 process downloadFiles {
-    container 'quay.io/biocontainers/gnu-wget:1.18--3'
 
-    input:
-    file directory from public_dataset_path.flatten()
+    errorStrategy 'retry'
+    maxErrors 3
 
     output:
-    file '*.raw' into rawFiles
+        file '*.raw' into rawFiles
 
     script:
     """
-    wget -v -r -nd -A "Campy_X2_Fr01.raw" --no-host-directories --cut-dirs=1 `cat $directory`
+    python ../../../scripts/download_raw_files.py $params.px_accession
     """
 }
 
 process generateMetadata {
     container 'ypriverol/thermorawfileparser:0.1'
 
-    publishDir 'data/', mode:'copy'
+    memory { 10.GB * task.attempt }
+    errorStrategy 'retry'
+    queue 'production-rh7'
+    publishDir "data/$params.px_accession", mode:'copy'
 
     input:
     file rawFile from rawFiles.flatten()
 
     output:
-    file '*.json' into metaResults
+    file '*.json' into metaResults mode flatten
     file '*.mzML' into spectraFiles
 
     script:
@@ -45,10 +60,13 @@ process generateMetadata {
     """
 }
 
-public_dataset_path.subscribe {
-    println it
-}
+process updateMetadata {
 
-metaResults.subscribe {
-    println it
+     input:
+     file metadataFile from metaResults
+
+     script:
+     """
+     python ../../../scripts/update_metadata.py $metadataFile
+     """
 }
