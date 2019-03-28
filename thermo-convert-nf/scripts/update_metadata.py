@@ -15,13 +15,14 @@ secondly update the msrun metadata via API endpoint
 
 # get metadata file name
 filename = sys.argv[1]
+base_url = "https://www.ebi.ac.uk/pride/ws/archive/v2/"
+
 
 def getToken(username, password):
-
     token = ""
 
     # get token to access the api
-    url = "https://www.ebi.ac.uk/pride/ws/archive/v2/getAAPToken?username=" + username + "&password=" + password
+    url = base_url + "getAAPToken?username=" + username + "&password=" + password
     headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
 
     response = requests.post(url, headers=headers)
@@ -33,22 +34,22 @@ def getToken(username, password):
         token = response.text
     return token
 
-def validateToken(token):
 
+def validateToken(token):
     # get token to access the api
-    url = "https://www.ebi.ac.uk/pride/ws/archive/v2/taken-validation"
+    url = base_url + "token-validation"
     headers = {'Authorization': 'Bearer ' + token}
 
     response = requests.post(url, headers=headers)
 
     return response.ok and response.status_code == 200 and response.text == 'Token Valid'
 
-def updateMsrunMetadata(filename, token):
 
+def updateMsrunMetadata(filename, token):
     # get project file accession from the prefix of the file name
     accession = filename.split('-', 1)[0]
 
-    url = "https://www.ebi.ac.uk/pride/ws/archive/v2/msruns/" + accession + "/updateMetadata"
+    url = base_url + "msruns/" + accession + "/updateMetadata"
     headers = {'Content-type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ' + token}
 
     with open(filename) as json_file:
@@ -62,15 +63,18 @@ def updateMsrunMetadata(filename, token):
         else:
             print(response)
 
+
 def wrapWithMSRunMetadata(filename):
     line_prepender(filename, '{"MSRunMetadata":')
     line_postpender(filename, "}")
+
 
 def line_prepender(filename, line):
     with open(filename, 'r+') as f:
         content = f.read()
         f.seek(0, 0)
         f.write(line.rstrip('\r\n') + content)
+
 
 def line_postpender(filename, line):
     with open(filename, "a") as myfile:
