@@ -13,10 +13,7 @@ This script mainly fetches a access token from the API and
 secondly update the msrun metadata via API endpoint
 """
 
-# get metadata file name
-filename = sys.argv[1]
 base_url = "https://www.ebi.ac.uk/pride/ws/archive/v2/"
-
 
 def getToken(username, password):
     token = ""
@@ -80,10 +77,18 @@ def line_postpender(filename, line):
     with open(filename, "a") as myfile:
         myfile.write(line)
 
+def main():
+    # get metadata file name
+    filename = sys.argv[1]
+    username = sys.argv[2]
+    password = sys.argv[3]
 
-token = getToken("sureshhewabi@gmail.com", "*******")
-print(token)
-isvalid = validateToken(token)
-print(isvalid)
-wrapWithMSRunMetadata(filename)
-updateMsrunMetadata(filename, token)
+    token = getToken(username, password)
+    print(token)
+    isvalid = validateToken(token)
+    print(isvalid)
+    wrapWithMSRunMetadata(filename)
+    updateMsrunMetadata(filename, token)
+
+if __name__ == '__main__':
+    main()

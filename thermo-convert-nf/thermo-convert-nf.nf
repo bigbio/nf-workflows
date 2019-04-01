@@ -23,7 +23,10 @@ Pipeline overview:
  * Define the default parameters
  */
 params.px_accession = ""
+params.pride_username = ""
+params.pride_password = ""
 params.script_path = "/Users/hewapathirana/PRIDE/Repositories/Nextflow/thermo-convert-nf/scripts"
+params.metadata_path = "/Users/hewapathirana/PRIDE/Repositories/Nextflow/thermo-convert-nf/data/" + params.px_accession
 
 process downloadFiles {
 
@@ -35,7 +38,7 @@ process downloadFiles {
 
     script:
     """
-    python ../../../scripts/download_raw_files.py $params.px_accession
+    python $params.script_path/download_raw_files.py $params.px_accession
     """
 }
 
@@ -45,7 +48,7 @@ process generateMetadata {
     memory { 10.GB * task.attempt }
     errorStrategy 'retry'
     queue 'production-rh7'
-    publishDir "data/$params.px_accession", mode:'copy'
+    publishDir "$params.metadata_path", mode:'copy', overwrite: true
 
     input:
     file rawFile from rawFiles.flatten()
@@ -67,6 +70,6 @@ process updateMetadata {
 
      script:
      """
-     python ../../../scripts/update_metadata.py $metadataFile
+     python $params.script_path/update_metadata.py $metadataFile $params.pride_username $params.pride_password
      """
 }
