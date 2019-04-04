@@ -47,7 +47,7 @@ process downloadFiles {
 }
 
 process generateMetadata {
-    container 'ypriverol/thermorawfileparser:0.1'
+    container 'quay.io/biocontainers/thermorawfileparser:1.1.0--0'
 
     memory { 10.GB * task.attempt }
     errorStrategy 'retry'
@@ -63,7 +63,7 @@ process generateMetadata {
 
     script:
     """
-    ThermoRawFileParser -i=${rawFile} -m=0 -f=1 -o=./
+    ThermoRawFileParser.sh -i=${rawFile} -m=0 -f=1 -o=./
     """
 }
 
