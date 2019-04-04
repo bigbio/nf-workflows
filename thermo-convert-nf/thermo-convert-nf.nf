@@ -25,8 +25,12 @@ Pipeline overview:
 params.px_accession = ""
 params.pride_username = ""
 params.pride_password = ""
-params.script_path = "/Users/hewapathirana/PRIDE/Repositories/Nextflow/thermo-convert-nf/scripts"
-params.metadata_path = "/Users/hewapathirana/PRIDE/Repositories/Nextflow/thermo-convert-nf/data/" + params.px_accession
+
+log.info """\
+ M E T A D A T A   P I P E L I N E
+ ===================================
+ Project Accession  : ${params.px_accession}
+ """
 
 process downloadFiles {
 
@@ -38,7 +42,7 @@ process downloadFiles {
 
     script:
     """
-    python $params.script_path/download_raw_files.py $params.px_accession
+    download_raw_files.py $params.px_accession
     """
 }
 
@@ -48,7 +52,7 @@ process generateMetadata {
     memory { 10.GB * task.attempt }
     errorStrategy 'retry'
     queue 'production-rh7'
-    publishDir "$params.metadata_path", mode:'copy', overwrite: true
+    publishDir "data/$params.px_accession", mode:'copy', overwrite: true
 
     input:
     file rawFile from rawFiles.flatten()
@@ -70,6 +74,10 @@ process updateMetadata {
 
      script:
      """
-     python $params.script_path/update_metadata.py $metadataFile $params.pride_username $params.pride_password
+     update_metadata.py $metadataFile $params.pride_username $params.pride_password
      """
+}
+
+workflow.onComplete {
+	log.info ( workflow.success ? "\nSuccessful" : "Failed to update metadata in $params.px_accession" )
 }
