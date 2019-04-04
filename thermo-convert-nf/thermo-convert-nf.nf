@@ -1,34 +1,83 @@
 #!/usr/bin/env nextflow
 
-params.px_accession = "PXD000801"
-params.file_output = 1
+/*
+========================================================================================
+                 Metadata Extraction Workflow for PRIDE Data
+========================================================================================
+ @#### Authors
+ Yasset Perez-Riverol <ypriverol@gmail.com>
+ Suresh Hewapathirana <sureshhewabi@gmail.com>
+----------------------------------------------------------------------------------------
+----------------------------------------------------------------------------------------
+Pipeline overview:
+ - 1:   Find the PRIDE FTP project path and Download all the raw files from FTP
+ - 2:   Converting the RAW data into mzML files and extract the metadata for the mzML files and the RAW files
+ - 3:   Format metadata into proper JSON format
+ - 4:   Push metadata to the database
+ - 5:   Clear Working directories
+
+ ----------------------------------------------------------------------------------------
+*/
+
+/*
+ * Define the default parameters
+ */
+params.px_accession = ""
+params.pride_username = ""
+params.pride_password = ""
+
+log.info """\
+ M E T A D A T A   P I P E L I N E
+ ===================================
+ Project Accession  : ${params.px_accession}
+ """
 
 process downloadFiles {
-    container 'quay.io/biocontainers/gnu-wget:1.18--3'
+
+    errorStrategy 'retry'
+    maxErrors 3
 
     output:
-    file '*.raw' into rawFiles
+        file '*.raw' into rawFiles
 
     script:
     """
-    wget -v -r -nd -A "*.raw" --no-host-directories --cut-dirs=1 ftp://ftp.pride.ebi.ac.uk/pride/data/archive/2018/09/PXD010376/
+    download_raw_files.py $params.px_accession
     """
 }
 
 process generateMetadata {
     container 'ypriverol/thermorawfileparser:0.1'
 
-    publishDir 'data/', mode:'copy'
+    memory { 10.GB * task.attempt }
+    errorStrategy 'retry'
+    queue 'production-rh7'
+    publishDir "data/$params.px_accession", mode:'copy', overwrite: true
 
     input:
     file rawFile from rawFiles.flatten()
 
     output:
-    file '*.json' into metaResults
+    file '*.json' into metaResults mode flatten
     file '*.mzML' into spectraFiles
 
     script:
     """
     ThermoRawFileParser -i=${rawFile} -m=0 -f=1 -o=./
     """
+}
+
+process updateMetadata {
+
+     input:
+     file metadataFile from metaResults
+
+     script:
+     """
+     update_metadata.py $metadataFile $params.pride_username $params.pride_password
+     """
+}
+
+workflow.onComplete {
+	log.info ( workflow.success ? "\nSuccessful" : "Failed to update metadata in $params.px_accession" )
 }
