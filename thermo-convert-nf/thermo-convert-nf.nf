@@ -25,6 +25,7 @@ Pipeline overview:
 params.px_accession = ""
 params.pride_username = ""
 params.pride_password = ""
+params.metadata_path = ""
 
 log.info """\
  ===================================
@@ -53,7 +54,7 @@ process generateMetadata {
     memory { 10.GB * task.attempt }
     errorStrategy 'retry'
     queue 'production-rh7'
-    publishDir "data/$params.px_accession", mode:'copy', overwrite: true
+    publishDir "$params.metadata_path", mode:'copy', overwrite: true
 
     input:
     file rawFile from rawFiles.flatten()
