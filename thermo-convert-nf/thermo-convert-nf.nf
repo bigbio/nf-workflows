@@ -27,7 +27,8 @@ params.pride_username = ""
 params.pride_password = ""
 
 log.info """\
- M E T A D A T A   P I P E L I N E
+ ===================================
+  M E T A D A T A   P I P E L I N E
  ===================================
  Project Accession  : ${params.px_accession}
  """
