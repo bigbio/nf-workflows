@@ -33,7 +33,7 @@ class RawFiles:
 
         responseBody = response.json()
 
-        for raw_file in responseBody[:2]:
+        for raw_file in responseBody:
             ftp_filepath = raw_file['publicFileLocations'][0]['value']
             public_filepath_part = ftp_filepath.rsplit('/', 1)
             print(raw_file['accession'] + " -> " + ftp_filepath)
