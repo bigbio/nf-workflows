@@ -32,6 +32,7 @@ log.info """\
   M E T A D A T A   P I P E L I N E
  ===================================
  Project Accession  : ${params.px_accession}
+ Metadata Files     : ${params.metadata_path}
  """
 
 process downloadFiles {
