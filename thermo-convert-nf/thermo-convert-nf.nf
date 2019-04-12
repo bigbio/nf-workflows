@@ -41,7 +41,7 @@ process downloadFiles {
     maxErrors 3
 
     output:
-        file '*.raw' into rawFiles
+        file '*.{raw,RAW,Raw}' into rawFiles
 
     script:
     """
@@ -50,7 +50,8 @@ process downloadFiles {
 }
 
 process generateMetadata {
-    container 'quay.io/biocontainers/thermorawfileparser:1.1.0--0'
+
+    container 'ypriverol/thermorawfileparser:1.1.0'
 
     memory { 10.GB * task.attempt }
     errorStrategy 'retry'
@@ -66,7 +67,7 @@ process generateMetadata {
 
     script:
     """
-    ThermoRawFileParser.sh -i=${rawFile} -m=0 -f=1 -o=./
+    ThermoRawFileParser -i=${rawFile} -m=0 -f=1 -o=./ --ignoreInstrumentErrors
     """
 }
 
