@@ -26,6 +26,8 @@ params.px_accession = ""
 params.pride_username = ""
 params.pride_password = ""
 params.metadata_path = ""
+params.mode = ""
+params.files_location = ""
 
 log.info """\
  ===================================
@@ -42,6 +44,9 @@ process downloadFiles {
 
     output:
         file '*.{raw,RAW,Raw}' into rawFiles
+
+    when:
+    $params.files_location == ""
 
     script:
     """
@@ -74,6 +79,9 @@ process updateMetadata {
 
      input:
      file metadataFile from metaResults
+
+     when:
+     params.mode != 'test'
 
      script:
      """
