@@ -20,6 +20,7 @@ ${NEXTFLOW}nextflow run ${SCRIPT_DIR}/thermo-convert-nf.nf \
                                   --pride_password $PASSWORD \
                                   --metadata_path "${METADATA_DIR}${ACCESSION}/data" \
                                   --mode $MODE
+
 # Clean working directories
 echo "Cleanning the working directory..."
 ${NEXTFLOW}nextflow clean -f $ACCESSION

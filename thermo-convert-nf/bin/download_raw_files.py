@@ -18,7 +18,7 @@ class RawFiles:
     def __init__(self):
         pass
 
-    def downloadRawFiles(self, accession):
+    def download_raw_files_from_ftp(self, accession):
         """
         This method will download all the raw files from PRIDE FTP
         :param accession: PRIDE accession
@@ -41,7 +41,7 @@ class RawFiles:
 def main():
     raw_files =  RawFiles()
     accession = sys.argv[1]
-    raw_files.downloadRawFiles(accession)
+    raw_files.download_raw_files_from_ftp(accession)
 
 if __name__ == '__main__':
     main()
