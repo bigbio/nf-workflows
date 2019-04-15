@@ -4,11 +4,11 @@
 This script mainly holds raw files related methods
 """
 
-import requests
 import sys
-import os
 import urllib
 import urllib.request
+from util import Util
+
 
 class RawFiles:
     """ This class handles PRIDE submission raw files"""
@@ -24,16 +24,14 @@ class RawFiles:
         :param accession: PRIDE accession
         :return: None
         """
-        requestURL = self.base_url + "files/byProject?accession=" + accession + ",fileCategory.value==RAW"
-        response = requests.get(requestURL, headers={"Accept": "application/JSON"})
+        request_url = self.base_url + "files/byProject?accession=" + accession + ",fileCategory.value==RAW"
+        headers={"Accept": "application/JSON"}
 
-        if (not response.ok) or response.status_code != 200:
-            response.raise_for_status()
-            sys.exit()
+        response = Util.call_api(request_url, headers)
 
-        responseBody = response.json()
+        response_body = response.json()
 
-        for raw_file in responseBody:
+        for raw_file in response_body:
             ftp_filepath = raw_file['publicFileLocations'][0]['value']
             public_filepath_part = ftp_filepath.rsplit('/', 1)
             print(raw_file['accession'] + " -> " + ftp_filepath)
