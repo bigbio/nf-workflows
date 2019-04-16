@@ -1,3 +1,18 @@
+Label-Free Protein Quantitation Pipeline
+==================================================
+
+This pipeline uses the popular proteomics framework OpenMS to perform protein quantitative analysis. The current pipeline 
+containers the following steps: 
+
+- Peptide Idnetification using the MSGF+ search engine.
+   - The database containing the decoys proteins should be provided. 
+- Peptide FDR calculation and filtering 1% PSM FDR. 
+    
+
+### Peptide identification 
+
+
+
 #fasta in ini
 cd /hps/nobackup/proteomics/conversion_comparison/???/
 mkdir ../msgf_newconverts

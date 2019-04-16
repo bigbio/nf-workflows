@@ -53,6 +53,7 @@ process downloadFiles {
 }
 
 process generateMetadata {
+
     container 'ypriverol/thermorawfileparser:1.1.0'
 
     memory { 10.GB * task.attempt }

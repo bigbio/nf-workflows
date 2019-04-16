@@ -118,7 +118,7 @@ process searchMsgf {
 }
 
 process createTideIndex {
-	container 'biocontainers/crux:v3.2_cv3'
+	container 'ypriverol/crux:3.2.9'
 	memory { 4.GB }
 
 	input:
@@ -135,7 +135,7 @@ process createTideIndex {
 }
 
 process searchTide {
-	container 'biocontainers/crux:v3.2_cv3'
+	container 'ypriverol/crux:3.2.9'
 	memory { 4.GB }
 	publishDir "result"
 
