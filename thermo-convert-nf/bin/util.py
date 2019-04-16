@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import requests
 from ratelimit import limits, sleep_and_retry
 
