@@ -26,6 +26,8 @@ params.px_accession = ""
 params.pride_username = ""
 params.pride_password = ""
 params.metadata_path = ""
+params.mode = ""
+params.files_location = ""
 
 log.info """\
  ===================================
@@ -33,6 +35,7 @@ log.info """\
  ===================================
  Project Accession  : ${params.px_accession}
  Metadata Files     : ${params.metadata_path}
+ Submission Mode    : ${params.mode}
  """
 
 process downloadFiles {
@@ -41,11 +44,11 @@ process downloadFiles {
     maxErrors 3
 
     output:
-        file '*.{raw,RAW,Raw}' into rawFiles
+    file '*.{raw,RAW,Raw}' into rawFiles
 
     script:
     """
-    download_raw_files.py $params.px_accession
+    download_raw_files.py $params.px_accession $params.files_location
     """
 }
 
@@ -75,6 +78,9 @@ process updateMetadata {
 
      input:
      file metadataFile from metaResults
+
+     when:
+     params.mode != 'test'
 
      script:
      """

@@ -44,11 +44,11 @@ def main():
 
     # Get user token to make calls with PRIDE API
     authentication=Authentication()
-    token = authentication.getToken(username, password)
+    token = authentication.get_token(username, password)
 
     # Format extracted metadata to compatible with PRIDE API endpoint
     fileHandling=FileHandling()
-    fileHandling.wrapWithMSRunMetadata(filename)
+    fileHandling.wrap_with_ms_run_metadata(filename)
 
     # Update msrun metatdata
     msrun = MsRun()

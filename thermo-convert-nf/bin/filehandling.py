@@ -13,7 +13,7 @@ class FileHandling:
     This class handles all the file related methods
     """
 
-    def saveFile(self, out_filename, content):
+    def save_file(self, out_filename, content):
         '''
         This method writes the content to the output file
         :param out_filename: full path of the output file
@@ -56,7 +56,7 @@ class FileHandling:
         except FileNotFoundError as file_write_error:
             print(file_write_error)
 
-    def wrapWithMSRunMetadata(self, filename):
+    def wrap_with_ms_run_metadata(self, filename):
         """
         This wraps the JSON object with the MSRunMetadata wrapper to make the JSON object compatible with the PRIDE API
         :param filename:
