@@ -28,6 +28,7 @@ params.pride_password = ""
 params.metadata_path = ""
 params.mode = ""
 params.files_location = ""
+params.ftp_download = false
 
 log.info """\
  ===================================
@@ -36,9 +37,13 @@ log.info """\
  Project Accession  : ${params.px_accession}
  Metadata Files     : ${params.metadata_path}
  Submission Mode    : ${params.mode}
+ Raw Files Location : ${params.files_location}
+ Enable FTP download: ${params.ftp_download}
  """
 
 process downloadFiles {
+
+    container 'sureshhewabi/pride-py:0.0.8'
 
     errorStrategy 'retry'
     maxErrors 3
@@ -48,7 +53,7 @@ process downloadFiles {
 
     script:
     """
-    download_raw_files.py $params.px_accession $params.files_location
+    python3 /pridepy.py download -a $params.px_accession -o ./ -f $params.ftp_download -i $params.files_location
     """
 }
 
@@ -76,6 +81,8 @@ process generateMetadata {
 
 process updateMetadata {
 
+     container 'sureshhewabi/pride-py:0.0.8'
+
      input:
      file metadataFile from metaResults
 
@@ -84,7 +91,7 @@ process updateMetadata {
 
      script:
      """
-     update_metadata.py $metadataFile $params.pride_username $params.pride_password
+     python3 /pridepy.py update-metadata -f $metadataFile -u $params.pride_username -p $params.pride_password
      """
 }
 

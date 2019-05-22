@@ -8,6 +8,7 @@ METADATA_DIR=$4
 PROFILE=$5
 MODE=$6
 FILE_LOCATION=$7
+ENABLE_FTP_DOWNLOAD=$8
 SCRIPT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
 # run Nextflow pipeline
@@ -21,8 +22,8 @@ ${NEXTFLOW}nextflow run ${SCRIPT_DIR}/thermo-convert-nf.nf \
                                   --pride_password $PASSWORD \
                                   --metadata_path "${METADATA_DIR}${ACCESSION}/data" \
                                   --mode $MODE \
-                                  --files_location $FILE_LOCATION
+                                  --files_location $FILE_LOCATION \
+                                  --ftp_download $ENABLE_FTP_DOWNLOAD
 
-# Clean working directories
 echo "Cleanning the working directory..."
 ${NEXTFLOW}nextflow clean -f $ACCESSION
