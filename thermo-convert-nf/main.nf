@@ -30,6 +30,7 @@ params.mode = ""
 params.files_location = ""
 params.ftp_download = false
 
+
 log.info """\
  ===================================
   M E T A D A T A   P I P E L I N E
@@ -42,6 +43,7 @@ log.info """\
  """
 
 process downloadFiles {
+
 
     container 'quay.io/pride/pride-py:0.0.8'
 
@@ -80,6 +82,7 @@ process generateMetadata {
 }
 
 process updateMetadata {
+
 
      container 'quay.io/pride/pride-py:0.0.8'
 
