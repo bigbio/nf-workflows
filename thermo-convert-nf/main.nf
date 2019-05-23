@@ -43,7 +43,7 @@ log.info """\
 
 process downloadFiles {
 
-    container 'sureshhewabi/pride-py:0.0.8'
+    container 'quay.io/pride/pride-py:0.0.8'
 
     errorStrategy 'retry'
     maxErrors 3
@@ -81,7 +81,7 @@ process generateMetadata {
 
 process updateMetadata {
 
-     container 'sureshhewabi/pride-py:0.0.8'
+     container 'quay.io/pride/pride-py:0.0.8'
 
      input:
      file metadataFile from metaResults
