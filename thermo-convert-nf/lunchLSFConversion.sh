@@ -12,7 +12,7 @@ ENABLE_FTP_DOWNLOAD=$8
 SCRIPT_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
 
 # run Nextflow pipeline
-${NEXTFLOW}nextflow run ${SCRIPT_DIR}/thermo-convert-nf.nf \
+${NEXTFLOW}nextflow run ${SCRIPT_DIR}/main.nf \
                                   -c ${SCRIPT_DIR}/nextflow.config \
                                   -profile $PROFILE \
                                   -with-report \
