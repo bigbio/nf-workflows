@@ -3,7 +3,8 @@ vim: syntax=groovy
 -*- mode: groovy;-*-
 
 ==============================
-A pipeline to search MS data in a protein database
+A proteogenomics pipeline to identify peptides from altORF, pseudogenes, lncRNA, nsSNPs, somatic mutations
+the pipeline esitmates the global FDR and group-specific FDR for peptide identifications. 
 ==============================
 
 */
@@ -21,13 +22,16 @@ params.outdir = 'result'
 
 protdb = file(params.protdb)
 params.MS1tolerance = '10ppm'
-params.FragmentMethodID = 0 // 0 use the FragMethod as written in spectra,  3 for HCD, 1 for CID, 2 for ETD
+params.FragmentMethodID = 0 // 0: As written in the spectrum or CID if no info (Default), 1: CID, 2: ETD, 3: HCD, 4: UVPD
 params.inst = 1 // 0: Low-res LCQ/LTQ, 1: Orbitrap/FTICR/Lumos, 2: TOF, 3: Q-Exactive
-params.protocol = 0
-params.qval = 0.01 // q-value cutoff
+params.protocol = 0 // 0: Automatic (Default), 1: Phosphorylation, 2: iTRAQ, 3: iTRAQPhospho, 4: TMT, 5: Standard
+params.EnzymeID = 1 // 0: unspecific cleavage, 1: Trypsin (Default), 2: Chymotrypsin, 3: Lys-C, 4: Lys-N, 5: glutamyl endopeptidase, 6: Arg-C, 7: Asp-N, 8: alphaLP, 9: no cleavage
 
+params.qval = 0.01 // q-value cutoff
 config = file(params.config) // instead of giving all parameters through command-line, use one config files for all search parameters
 
+params.decoy_prefix = 'XXX_'
+params.group_tag = 'mutation'
 
 ///////////////////
 
@@ -59,13 +63,13 @@ mzml_in
 process DatabaseSearch {
 
   input:
-  set val(setname), val(sample), file(x) from mzml_msgf
+  set val(setname), val(filename), file(x) from mzml_msgf
 
   output:
-  set val(setname), val(sample), file("${sample}.mzid") into mzids
+  set val(setname), val(filename), file("${sample}.mzid") into mzids
   
   """
-  msgf_plus -Xmx12G -thread 1 -d $protdb -s $x -o "${sample}.mzid" -mod $mods -tda 0 -t ${params.MS1tolerance} -ti -1,2 -m ${params.FragmentMethodID} -inst ${params.inst} -e 1 -protocol ${params.protocol} -ntt 2 -minLength 8 -maxLength 40 -minCharge 2 -maxCharge 4 -maxMissedCleavages 2 -n 1 -addFeatures 1
+  msgf_plus -Xmx12G -thread 1 -d $protdb -s $x -o "${filename}.mzid" -mod $mods -tda 0 -t ${params.MS1tolerance} -ti -1,2 -m ${params.FragmentMethodID} -inst ${params.inst} -e ${params.EnzymeID} -protocol ${params.protocol} -ntt 2 -minLength 7 -maxLength 40 -minCharge 2 -maxCharge 4 -maxMissedCleavages 2 -n 1 -addFeatures 1
   """
 }
 
@@ -115,11 +119,11 @@ process GlobalFDR {
  set val(setname), file('sorted.psm') from globalFDRtsv
  
  output:
- set val(setname), file("${setname}_psms.FDR0.01.txt") into all_psm
+ set val(setname), file("${setname}_psms.globalFDR0.01.txt") into all_psm
  
  script:
  """
- GlobalFDR.py --input sorted.psm --output ${setname}_psms.FDR0.01.txt --decoy_prefix XXX_ --psm_qval 0.01
+ GlobalFDR.py --input sorted.psm --output ${setname}_psms.globalFDR0.01.txt --decoy_prefix ${decoy_prefix} --psm_qval ${params.qval}
  """
 
 }
@@ -137,20 +141,5 @@ process subGroupFDR {
  subgroupFDR.py --input sorted.psm --group_tag ${group_tag} --output ${setname}_${group_tag}.txt --psm_qval ${params.qval}
  """
 }
-
-
-process ProteinInference {
-  
-
-}
-
-
-Process ProteinFDR {
-
-
-
-}
-
-
 
 
