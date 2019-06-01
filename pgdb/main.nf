@@ -34,14 +34,27 @@ process ensembl_protein_fasta_download(){
     file ensembl_downloader_config
 
     output:
-	file "database_ensembl/*.gz" into ensembl_fasta_databases
+	file "database_ensembl/*.gz" into ensembl_fasta_gz_databases
 
 	script:
 	"""
 	pypgatk_cli.py ensembl-downloader --config_file "${ensembl_downloader_config}" --taxonomy ${params.taxonomy}
 	"""
+}
 
-    
-    
+process gunzip_ensembl_files{
+
+    container 'quay.io/bigbio/pypgatk:0.0.1'
+
+    input: 
+    file(fasta_file) from ensembl_fasta_gz_databases
+
+    output: 
+    file '*.fa' into ensembl_fasta_databases
+
+    script: 
+    """
+    gunzip -d --force ${fasta_file}
+    """ 
 }
 
