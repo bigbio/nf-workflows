@@ -55,7 +55,7 @@ process gunzip_ensembl_files{
 
     output: 
     file '*pep.all.fa' into ensembl_protein_database
-    file '*cds.all.fa' into ensembl_cds_database
+    file '*cdna.all.fa' into ensembl_cdna_database
     file '*ncrna.fa' into ensembl_ncrna_database
 
     script: 
@@ -64,17 +64,17 @@ process gunzip_ensembl_files{
     """ 
 }
 
-(lncrna_cds, cds) = ( !params.lncrna 
-                 ? [Channel.empty(), ensembl_cds_database] 
-                 : [ensembl_cds_database, ensembl_cds_database] ) 
+(lncrna_cdna, cdna) = ( !params.lncrna 
+                 ? [Channel.empty(), ensembl_cdna_database] 
+                 : [ensembl_cdna_database, ensembl_cdna_database] ) 
 
 process add_lncrna {
-  
+  echo true
   container 'quay.io/bigbio/pypgatk:0.0.1'
   publishDir "result", mode: 'copy', overwrite: true
 
   input:
-  file x from lncrna_cds
+  file x from lncrna_cdna
   file ensembl_lncrna_config
 
   output:
