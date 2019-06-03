@@ -34,6 +34,10 @@ params.seudogenes = true
 params.ensembl_seudogenes_config = "${baseDir}/configs/ensembl_config.yaml"
 ensembl_seudogenes_config = file(params.ensembl_seudogenes_config)
 
+params.final_database_protein = "final_database_protein.fa"
+
+params.final_decoy_database_protein = "final_database_protein_decoy.fa"
+
 process ensembl_protein_fasta_download(){
     
     container 'quay.io/bigbio/pypgatk:0.0.1'
@@ -89,9 +93,24 @@ process add_lncrna {
   """
 }
 
-
 (seudogenes_cdna, cdna_seudogenes) = ( !params.seudogenes ? [Channel.empty(), cdna_lncrna] : [cdna_lncrna, cdna_lncrna] ) 
 
+/**
+ * Creates the seudogenes protein database. 
+ * The default configuration for pypgatk tool is: 
+ *  - disrupted_domain 
+ *  - IGC_pseudogene
+ *  - IGJ_pseudogene 
+ *  - IG_pseudogene 
+ *  - IGV_pseudogene
+ *  - processed_pseudogene
+ *  - transcribed_processed_pseudogene
+ *  - transcribed_unitary_pseudogene
+ *  - transcribed_unprocessed_pseudogene
+ *  - translated_processed_pseudogene
+ *  - TRJ_pseudogene
+ *  - unprocessed_pseudogene  
+ */ 
 process add_seudogenes {
 
   container 'quay.io/bigbio/pypgatk:0.0.1'
@@ -109,6 +128,54 @@ process add_seudogenes {
   pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_seudogenes_config}" --input_fasta "${x}" --output_proteindb proteindb_from_pseudogenes_DNAseq.fa --include_biotypes 'disrupted_domain, IGC_pseudogene, IGJ_pseudogene, IG_pseudogene, IGV_pseudogene, processed_pseudogene, transcribed_processed_pseudogene, transcribed_unitary_pseudogene, transcribed_unprocessed_pseudogene, translated_processed_pseudogene, TRJ_pseudogene, unprocessed_pseudogene' --skip_including_all_cds
   """
 }
+
+/**
+ * Merge all the protein databases, for example: ensembl proteins + lncrna + seudogenes  
+ */
+process merge_databases_final_proteindb {
+
+    container 'quay.io/bigbio/pypgatk:0.0.1' 
+    publishDir "result", mode: 'copy', overwrite: true 
+
+    input:
+    file a from ensembl_protein_database
+    file b from optional_lncrna
+    file c from optional_seudogenes
+
+    output: 
+    file '*.fa' into final_databases
+
+    script: 
+    """
+    cat "${a}" "${b}" "${c}" >> "${params.final_database_protein}"
+    """ 
+
+}
+
+
+/**
+ * Create the decoy database using searchgui tool
+ * 
+ * SearchGUI adds reversed sequences by adding a "_REVERSED" tag to the
+ * protein accession.
+ */
+process create_decoy_db {
+	container 'biocontainers/searchgui:v2.8.6_cv2'
+    publishDir "result", mode: 'copy', overwrite: true 
+
+	input:
+	file x from final_databases
+
+	output:
+	file "*.fasta" into fasta_decoy_db
+
+	script:
+	"""
+	java -cp /home/biodocker/bin/SearchGUI-2.8.6/SearchGUI-2.8.6.jar eu.isas.searchgui.cmd.FastaCLI -decoy -in "${x}"
+	"""
+}
+
+
 
 
 
