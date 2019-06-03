@@ -5,7 +5,8 @@
                  Proteogenomics Custom database creation
 ========================================================================================
  Authors
- Yasset Perez-Riverol <ypriverol@gmail.com>
+ - Yasset Perez-Riverol <ypriverol@gmail.com>
+ - Husen M. Umer <>
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 Pipeline overview:
@@ -28,6 +29,10 @@ ensembl_downloader_config = file(params.ensembl_downloader_config)
 params.lncrna = true 
 params.ensembl_lncrna_config = "${baseDir}/configs/ensembl_config.yaml"
 ensembl_lncrna_config = file(params.ensembl_lncrna_config)
+
+params.seudogenes = true 
+params.ensembl_seudogenes_config = "${baseDir}/configs/ensembl_config.yaml"
+ensembl_seudogenes_config = file(params.ensembl_seudogenes_config)
 
 process ensembl_protein_fasta_download(){
     
@@ -64,12 +69,10 @@ process gunzip_ensembl_files{
     """ 
 }
 
-(lncrna_cdna, cdna) = ( !params.lncrna 
-                 ? [Channel.empty(), ensembl_cdna_database] 
-                 : [ensembl_cdna_database, ensembl_cdna_database] ) 
+(lncrna_cdna, cdna_lncrna) = ( !params.lncrna ? [Channel.empty(), ensembl_cdna_database] : [ensembl_cdna_database, ensembl_cdna_database] ) 
 
 process add_lncrna {
-  echo true
+
   container 'quay.io/bigbio/pypgatk:0.0.1'
   publishDir "result", mode: 'copy', overwrite: true
 
@@ -83,6 +86,27 @@ process add_lncrna {
   script:
   """
   pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_lncrna_config}" --input_fasta ${x} --output_proteindb proteindb_from_lncRNAs_DNAseq.fa --include_biotypes '3prime_overlapping_ncrna, ambiguous_orf, antisense, antisense_RNA, lincRNA, ncrna_host, processed_transcript, sense_intronic, sense_overlapping' --skip_including_all_cds
+  """
+}
+
+
+(seudogenes_cdna, cdna_seudogenes) = ( !params.seudogenes ? [Channel.empty(), cdna_lncrna] : [cdna_lncrna, cdna_lncrna] ) 
+
+process add_seudogenes {
+
+  container 'quay.io/bigbio/pypgatk:0.0.1'
+  publishDir "result", mode: 'copy', overwrite: true
+
+  input:
+  file x from seudogenes_cdna
+  file ensembl_seudogenes_config
+
+  output:
+  file('*.fa') into optional_seudogenes
+
+  script:
+  """
+  pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_seudogenes_config}" --input_fasta "${x}" --output_proteindb proteindb_from_pseudogenes_DNAseq.fa --include_biotypes 'disrupted_domain, IGC_pseudogene, IGJ_pseudogene, IG_pseudogene, IGV_pseudogene, processed_pseudogene, transcribed_processed_pseudogene, transcribed_unitary_pseudogene, transcribed_unprocessed_pseudogene, translated_processed_pseudogene, TRJ_pseudogene, unprocessed_pseudogene' --skip_including_all_cds
   """
 }
 
