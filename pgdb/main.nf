@@ -35,9 +35,11 @@ params.ensembl_seudogenes_config = "${baseDir}/configs/ensembl_config.yaml"
 ensembl_seudogenes_config = file(params.ensembl_seudogenes_config)
 
 params.final_database_protein = "final_database_protein.fa"
-
 params.final_decoy_database_protein = "final_database_protein_decoy.fa"
 
+/** 
+ * Download data from ensembl for the particular specie. 
+ */ 
 process ensembl_protein_fasta_download(){
     
     container 'quay.io/bigbio/pypgatk:0.0.1'
@@ -54,6 +56,9 @@ process ensembl_protein_fasta_download(){
 	"""
 }
 
+/** 
+ * Decompress all the data downloaded from ENSEMBL 
+ */ 
 process gunzip_ensembl_files{
 
     container 'quay.io/bigbio/pypgatk:0.0.1'
@@ -64,8 +69,8 @@ process gunzip_ensembl_files{
 
     output: 
     file '*pep.all.fa' into ensembl_protein_database
-    file '*cdna.all.fa' into ensembl_cdna_database
-    file '*ncrna.fa' into ensembl_ncrna_database
+    file '*cdna.all.fa' into ensembl_cdna_database, ensembl_cdna_database_sub
+    file '*ncrna.fa' into ensembl_ncrna_database, ensembl_ncrna_database_sub
 
     script: 
     """
@@ -73,7 +78,25 @@ process gunzip_ensembl_files{
     """ 
 }
 
-(lncrna_cdna, cdna_lncrna) = ( !params.lncrna ? [Channel.empty(), ensembl_cdna_database] : [ensembl_cdna_database, ensembl_cdna_database] ) 
+
+process merge_cdans{
+  
+  container 'quay.io/bigbio/pypgatk:0.0.1' 
+
+  input:
+  file a from ensembl_cdna_database_sub
+  file b from ensembl_ncrna_database_sub
+  
+  output: 
+  file '*.fa' into total_cdans
+
+  script: 
+  """
+  cat "${a}" "${b}" >> total_cdans.fa
+  """ 
+}
+
+(lncrna_cdna, cdna_lncrna) = ( !params.lncrna ? [Channel.empty(), total_cdans] : [total_cdans, total_cdans] ) 
 
 process add_lncrna {
 
