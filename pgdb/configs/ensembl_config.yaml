@@ -1,0 +1,29 @@
+enmsembl_translation:
+  translation_table: 1
+  proteindb_output_file: 'peptide-database.fa'
+  ensembl_translation:
+    mito_translation_table: 2
+    var_prefix: "var"
+    report_ref_seq: False
+    annotation_field_name: 'CSQ'
+    af_field: 'MAF'
+    af_threshold: 0.01
+    transcript_index: 3
+    consequence_index: 1
+    exclude_biotypes: ''
+    exclude_consequences: 'downstream_gene_variant, upstream_gene_variant, intergenic_variant, intron_variant, synonymous_variant, regulatory_region_variant'
+    skip_including_all_cds: False
+    include_biotypes: ''
+    include_consequences: 'all'
+    biotype_str: 'transcript_biotype'
+    num_orfs: 3
+    num_orfs_complement: 0
+    expression_str: ""
+    expression_thresh: 5.0
+    ignore_filters: False
+    accepted_filters: ''
+  logger:
+    formatters:
+      DEBUG: "%(asctime)s [%(levelname)7s][%(name)48s][%(module)32s, %(lineno)4s] %(message)s"
+      INFO: "%(asctime)s [%(levelname)7s][%(name)48s] %(message)s"
+    loglevel: DEBUG
