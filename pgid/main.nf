@@ -31,7 +31,8 @@ params.qval = 0.01 // q-value cutoff
 config = file(params.config) // instead of giving all parameters through command-line, use one config files for all search parameters
 
 params.decoy_prefix = 'XXX_'
-params.group_tag = 'mutation'
+params.group_target = 'SAAV'
+params.group_decoy = "XXX_SAAV"
 
 ///////////////////
 
@@ -56,9 +57,6 @@ mzml_in
   .tap { sets }
   .map { it -> [ it[1], (it[0]=~/.*\/(.+)\..*$/)[0][1], file(it[0])]} // extract set, file name and file object from input
   .tap{ mzml_msgf } // create channels for downstream process
-  .count()
-  .set{ amount_mzml } //count the number of MS spectra file per MS experiment
-
 
 process DatabaseSearch {
 
@@ -123,22 +121,23 @@ process GlobalFDR {
  
  script:
  """
- GlobalFDR.py --input sorted.psm --output ${setname}_psms.globalFDR0.01.txt --decoy_prefix ${decoy_prefix} --psm_qval ${params.qval}
+ GlobalFDR.py --input sorted.psm --output ${setname}_psms.globalFDR0.01.txt --decoy_prefix ${params.decoy_prefix} --psm_qval ${params.qval}
  """
 
 }
 
 process subGroupFDR {
- publishDir "${params.outdir}", mode: 'copy', overwrite: true
+ publishDir "${params.outdir}", mode: 'copy', overwrite: true,saveAs: { it == "fitcurve.png" ? "${setname}_fitcurve.png" : it }
 
  input:
  set val(setname), file('sorted.psm') from subgroupFDRtsv
 
  output:
  set val(setname), file("${setname}_psms.txt") into novel_psm
+ file 'fitcurve.png' into plotout
 
  """
- subgroupFDR.py --input sorted.psm --group_tag ${group_tag} --output ${setname}_${group_tag}.txt --psm_qval ${params.qval}
+ subgroupFDR.py --input sorted.psm  --decoy_prefix ${params.decoy_prefix} --group_target ${params.group_target} --group_decoy ${params.group_decoy} --output ${setname}_${params.group_target}.txt --psm_qval ${params.qval}
  """
 }
 
