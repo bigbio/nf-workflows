@@ -5,11 +5,10 @@ import os
 import getopt
 import numpy as np
 import numpy.polynomial.polynomial as poly
-
+import matplotlib.pyplot as plt
 
 '''
-sort the file according to SpecEvalue first
-sort -s -g -t$'\t' -k13,13 file
+sort the file according to SpecEvalue in accending order first
 
 the script used the method described in the following paper to estimate subgroup specific FDR. 
 Transferred subgroup false discovery rate for rare post-translational modifications detected by mass spectrometry.
@@ -17,7 +16,7 @@ Mol Cell Proteomics. 2014 May
 
 '''
 
-psm_qval = 0.1
+psm_qval = 0.01
 if len(sys.argv[1:])<=1:  ### Indicates that there are insufficient number of command-line arguments
     print("Warning! wrong command!")
     print("Example: python subgroupFDR.py --input PSM_filename --output output_filename --decoy_prefix XXX_ --group_target SAAV --group_decoy XXX_SAAV")
@@ -42,7 +41,7 @@ header += ["group-PSMFDR","group-PepFDR"]
 
 output.write("\t".join(header)+"\n")
 
-score = []
+decoy_dic = {}
 score_dic = {}
 
 group_targetcount=0
@@ -51,18 +50,23 @@ group_decoycount=0
 decoycount=0
 targetcount=0
 
-pep_dic={}
 grouppep_dic={}
+
+pep_col=header.index("Peptide")
+prot_col=header.index("Protein")
+specEval_col=header.index("SpecEValue")
 
 for line in input:
     row=line.strip().split('\t')
-    pro=row[9]
-    specEval = -np.log10(float(row[12]))
+    pro=row[prot_col]
+    specEval = -np.log10(float(row[specEval_col]))
     
     if decoy_prefix in pro:
         decoycount+=1
+        decoy_dic[specEval] = [novel_decoycount,decoycount]
         if group_decoy in pro:
             group_decoycount+=1
+        
     else:
         targetcount+=1
         if group_target in pro:
@@ -75,21 +79,31 @@ input.close()
 x=[]
 y=[]
 
+x_filter=[]
+y_filter=[]
 for score in score_dic:
-     counts=score_dic[score]
-     if counts[3]>0: # if group_decoycount>0
-         y.append(counts[3]/counts[1])
-         x.append(score)
+    x.append(score)
+    frac=float(decoy_dic[score][0]/decoy_dic[score][1])
+    y.append(frac)
+    if 6<score<10: # excluding tails from fitting
+        x_filter.append(score)
+        y_filter.append(frac) 
+   
+     
+coefs = poly.polyfit(np.array(x_filter),np.array(y_filter), 1)
+print("coefficients",coefs)
+fit = poly.polyval(x, coefs)
 
-coefs = poly.polyfit(np.array(x),np.array(y), 1)
-
-intercept = coefs[0]
-slope = coefs[1]
-
+fig=plt.figure()
+ax = fig.add_subplot(111)
+ax.scatter(x,y,label = "Real data",s=1)
+ax.plot(x,fit,label = "Polynomial with order=1", color='C1')
+ax.legend()
+plt.xlabel('-log10(SpecEValue)')
+plt.ylabel('Gamma (group specific decoy hits / total decoy hits)')
+fig.savefig("fitcurve.png")    
+   
 input2=open(input_file,'r')
-
-pep_col = header.index("Peptide")
-prot_col = header.index("Protein")
 
 for line in input2:
     row=line.strip().split('\t')
@@ -98,7 +112,7 @@ for line in input2:
     if group_target not in pro:
         continue;
     
-    specEval = -np.log10(float(row[12]))
+    specEval = -np.log10(float(row[specEval_col]))
     counts = score_dic[specEval]   
 
     targetcount=float(counts[0])
@@ -106,7 +120,7 @@ for line in input2:
     FDR=decoycount/targetcount
 
     group_targetcount=float(counts[2])
-    gamma = slope*specEval+intercept
+    gamma = poly.polyval(specEval, coefs)
     groupFDR = FDR*gamma*(targetcount/group_targetcount)
 
     if pep not in grouppep_dic:
@@ -120,7 +134,6 @@ for line in input2:
             output.write("\t".join(row)+"\n")
 
 print ("Hits from the subgroup: targe,decoy",group_targetcount,group_decoycount)
-print ("intercept and slope is:",intercept,slope)
 
 input2.close()
 output.close()
