@@ -121,7 +121,11 @@ for line in input2:
 
     group_targetcount=float(counts[2])
     gamma = poly.polyval(specEval, coefs)
-    groupFDR = FDR*gamma*(targetcount/group_targetcount)
+    
+    try:
+        groupFDR = FDR*gamma*(targetcount/group_targetcount)
+    except ZeroDivisionError:
+        continue;
 
     if pep not in grouppep_dic:
         grouppep_dic[pep]= groupFDR
