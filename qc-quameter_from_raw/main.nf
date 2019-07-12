@@ -2,7 +2,7 @@
 
 /*
 ========================================================================================
-                 Identification-free QC workflow for proteomics
+                Quameter Identification-free QC workflow for proteomics
 ========================================================================================
  @#### Authors
  Yasset Perez-Riverol <ypriverol@gmail.com>
@@ -23,7 +23,7 @@ def helpMessage() {
     =========================================
     Usage:
     The typical command for running the pipeline is as follows:
-    nextflow run qc-rawms-nf/main.nf -c qc-rawms-nf/config.nf -profile local
+    nextflow run qc-quameter_from_raw/main.nf -c qc-rawms-nf/config.nf -profile local
 
     Mandatory arguments:
 
