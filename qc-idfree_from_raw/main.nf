@@ -2,9 +2,10 @@
 
 /*
 ========================================================================================
-                 Identification-free QC workflow for proteomics
+            Identification-free QC workflow for proteomics with OpenMS
 ========================================================================================
  @#### Authors
+ Mathias Walzer <walzer@ebi.ac.uk>
  Yasset Perez-Riverol <ypriverol@gmail.com>
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
@@ -12,9 +13,8 @@ Pipeline overview:
  - 1:   Download a PRIDE experiment from an FTP URL
  - 2:   Converting the RAW data into mzML files
  - 2.1: Extract the metadata for the mzML files and the RAW files
- - 3:   Extract the QC metrics for each RAW (MSrun) files
- - 4:   Generate the statistics about the Experiment and individual Runs
- - 5:   Output the HTML report for the experiment
+ - 3:   Calculate the QC metrics for each MSrun
+ - 4:   Generate the QC metric plots
  ----------------------------------------------------------------------------------------
 */
 
@@ -23,7 +23,7 @@ def helpMessage() {
     =========================================
     Usage:
     The typical command for running the pipeline is as follows:
-    nextflow run qc-rawms-nf/main.nf -c qc-rawms-nf/config.nf -profile local
+    nextflow run qc-idfree_from_raw/main.nf -c qc-idfree_from_raw/config.nf -profile local
 
     Mandatory arguments:
 
@@ -83,25 +83,43 @@ process generateMetadata {
     """
 }
 
-/**
- * Compute QuaMeter metrics for each RAW files
- */
-process qcIdFreeMzMLs{
+process IDfreeQualityControl{
+   container 'mwalzer/openms-batteries-included:V2.3.0_pepxmlpatch'
+   publishDir "${params.result_folder}", mode: 'copy', overwrite: true
 
-    label 'big_mem'
+   input:
+   file mzML_file from spectraFiles.flatten()
 
-    container 'quay.io/biocontainers/bumbershoot:3_0_11579--0'
-    publishDir 'data/', mode:'copy'
+   output:
+   file "*.qcML" into qcMLs
 
-    input:
-    file fileMzML from spectraFiles.flatten()
-
-    output:
-    file '*.tsv' into qcMzMLFiles
-
-    script:
-    """
-    quameter ${fileMzML} -MetricsType idfree -OutputFilepath ${fileMzML}-qc.tsv -cpus 5
-    """
+   script:
+   """
+   QCCalculator -in ${mzML_file} -out ${mzML}.qcML
+   """
 }
 
+qc_tool_parameters = ['auctic', 'charge_histogram', 'esiinstability', 
+                     'ms1peakcount', 'ms2peakcount', 'rt_events',  
+                     'tic', 'ticric', 'topn',
+                     'ms1sn', 'ms2sn', 'sn']
+
+process plotQualityControl{
+
+  container 'mwalzer/qc-plotter:latest'
+  publishDir "${params.result_folder}", mode: 'copy', overwrite: true
+
+  input:
+  file qcML from qcMLs
+  each param from qc_tool_parameters
+
+
+  output:
+  file "*.png" into plots
+
+  script:
+  """
+  qc_plot.sh -$param ${qcML}
+  """
+
+}

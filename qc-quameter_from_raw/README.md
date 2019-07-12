@@ -1,4 +1,4 @@
-Identification-free QC  
+Identification-free QC with QuaMeter 
 ========================
 
 This workflow downloads full dataset from PRIDE FTP and convert all the files to
