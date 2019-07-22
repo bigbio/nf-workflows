@@ -455,7 +455,7 @@ process cds_GRCh37_download{
 
 /**
  * Download all cBioPortal studies using git-lfs
-*/
+ */
  process download_all_cbioportal {
  	publishDir "result", mode: 'copy', overwrite: true
  	
@@ -476,7 +476,7 @@ process cds_GRCh37_download{
  	"""
  }
  
- /**
+/**
  * Generate proteinDB from cBioPortal mutations and split by tissue type
  */
  process cbioportal_proteindb{
