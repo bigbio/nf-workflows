@@ -24,3 +24,5 @@ nf-test/
 trace*
 *results*
 *report.html*
+
+*.project
