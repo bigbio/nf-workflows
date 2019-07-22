@@ -439,6 +439,64 @@ process gnomad_proteindb{
 }
 
 /**
+ * Download GRCh37 CDS file from ENSEMBL release 75 
+ */
+process cds_GRCh37_download{
+	
+	output:
+	file("Homo_sapiens.GRCh37.75.cds.all.fa") into GRCh37_cds
+	
+	script:
+	"""
+	wget ftp://ftp.ensembl.org/pub/release-75/fasta/homo_sapiens/cds/Homo_sapiens.GRCh37.75.cds.all.fa.gz 
+	gunzip *.gz
+	"""
+}
+
+/**
+ * Download all cBioPortal studies using git-lfs
+*/
+ process download_all_cbioportal {
+ 	publishDir "result", mode: 'copy', overwrite: true
+ 	
+ 	output:
+ 	file('cbioportal_allstudies_data_mutations_mskcc.txt') into cbio_mutations
+ 	file('cbioportal_all_data_clinical_sample.txt') into cbio_samples
+ 	
+ 	script:
+ 	"""
+ 	git clone https://github.com/cBioPortal/datahub.git
+ 	cd datahub
+ 	git lfs install --local --skip-smudge
+ 	git lfs pull -I public --include "data*clinical*sample.txt"
+ 	git lfs pull -I public --include "data_mutations_mskcc.txt"
+ 	cd ..
+ 	cat datahub/public/*/data_mutations_mskcc.txt > cbioportal_allstudies_data_mutations_mskcc.txt
+ 	cat datahub/public/*/*data*clinical*sample.txt > cbioportal_all_data_clinical_sample.txt
+ 	"""
+ }
+ 
+ /**
+ * Generate proteinDB from cBioPortal mutations and split by tissue type
+ */
+ process cbioportal_proteindb{
+	publishDir "result", mode: 'copy', overwrite: true 
+	
+	input:
+	file g from GRCh37_cds
+	file m from cbio_mutations
+	file s from cbio_samples
+	
+	output:
+	file 'cbioPortal_proteinDB*.fa' into cBioportal_proteindbs
+	
+	script:
+	"""
+	python ${container_path}pypgatk_cli.py cbioportal-to-proteindb --config_file "${cbioportal_config}" --input_mutation ${m} --input_cds ${g} --clinical_sample_file ${s} --output_db cbioPortal_proteinDB.fa --split_by_tissue_type
+	"""
+}
+
+/**
  * Create the decoy database using DecoyPYrat
  * Decoy sequences will have "_DECOY" prefix tag to the protein accession.
  */
@@ -457,33 +515,3 @@ process create_decoy_db {
 	python ${container_path}pypgatk_cli.py generate-decoy --config_file "${protein_decoy_config}" --input "${x}" --decoy_prefix "${params.decoy_prefix}" --output protein_decoy_database.fa
 	"""
 }
-
-/**
- * Download all cBioPortal studies using git-lfs
-
- process download_all_cbioportal {
- 	
- 	input:
- 	
- 	
- 	output:
- 	
- 	
- 	script:
- 	"""
- 	git clone https://github.com/cBioPortal/datahub.git
- 	cd datahub
- 	git lfs install --local --skip-smudge
- 	git lfs pull -I public --include "data_clinical_sample.txt"
- 	git lfs pull -I public --include "data_mutations_mskcc.txt"
- 	
- 	"""
- }
-  */
- /**
- * Combine all cBioPortal studies into one file
- */
- 
- /**
- * Generate proteinDB from cBioPortal mutations and split by tissue type
- */
