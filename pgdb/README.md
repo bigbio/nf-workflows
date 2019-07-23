@@ -1,4 +1,5 @@
-*** Generates protein databases for performing proteogenomics analysis ***
+Protein Databases Generation Using *pypgatk*
+============================================
  
 Required tools:
 
