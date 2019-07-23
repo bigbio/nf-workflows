@@ -494,7 +494,7 @@ process cds_GRCh37_download{
 	
 	script:
 	"""
-	python ${container_path}pypgatk_cli.py cbioportal-to-proteindb --config_file "${cbioportal_config}" --input_mutation ${m} --input_cds ${g} --clinical_sample_file ${s} --output_db cbioPortal_proteinDB.fa --split_by_tissue_type
+	python ${container_path}pypgatk_cli.py cbioportal-to-proteindb --config_file "${cbioportal_config}" --input_mutation ${m} --input_cds ${g} --clinical_sample_file ${s} --output_db cbioPortal_proteinDB.fa
 	"""
 }
 
