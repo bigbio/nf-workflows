@@ -108,7 +108,7 @@ process gunzip_ensembl_files{
     file(fasta_file) from ensembl_fasta_gz_databases
 
     output: 
-    file '*pep.all.fa' into ensembl_protein_database, decoys
+    file '*pep.all.fa' into ensembl_protein_database
     file '*cdna.all.fa' into ensembl_cdna_database, ensembl_cdna_database_sub
     file '*ncrna.fa' into ensembl_ncrna_database, ensembl_ncrna_database_sub
 	file '*.gtf' into gtf
@@ -149,7 +149,7 @@ process add_ncrna {
   file ensembl_config
 
   output:
-  file('*.fa') into optional_ncrna, decoys
+  file('*.fa') into optional_ncrna
 
   script:
   """
@@ -172,7 +172,7 @@ process add_pseudogenes {
   file ensembl_config
 
   output:
-  file('*.fa') into optional_pseudogenes, decoys
+  file('*.fa') into optional_pseudogenes
 
   script:
   """
@@ -195,7 +195,7 @@ process altorfs_proteindb {
   file ensembl_config
 
   output:
-  file('*.fa') into optional_altorfs, decoys
+  file('*.fa') into optional_altorfs
 
   script:
   """
@@ -507,13 +507,13 @@ process create_decoy_db {
     publishDir "result", mode: 'copy', overwrite: true 
 
 	input:
-	file x from final_databases
+	file x from decoys
 
 	output:
-	file "*.fa" into fasta_decoy_db
+	file "${params.decoy_prefix}${x}" into fasta_decoy_db
 
 	script:
 	"""
-	python ${container_path}pypgatk_cli.py generate-decoy --config_file "${protein_decoy_config}" --input "${x}" --decoy_prefix "${params.decoy_prefix}" --output protein_decoy_database.fa
+	python ${container_path}pypgatk_cli.py generate-decoy --config_file "${protein_decoy_config}" --input "${x}" --decoy_prefix "${params.decoy_prefix}" --output "${params.decoy_prefix}${x}"
 	"""
 }
