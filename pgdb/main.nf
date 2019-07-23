@@ -66,6 +66,9 @@ params.gencode_url = "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/re
 params.gnomad_file_url = "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.22.vcf.bgz" //only chr22 for testing 
 //"gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.vcf.bgz"
 ZCAT = (System.properties['os.name'] == 'Mac OS X' ? 'gzcat' : 'zcat')
+
+cbioportal_config = "${baseDir}/configs/cbioportal_config.yaml"
+
 /*
  * Required parameters
 */
@@ -93,6 +96,7 @@ process ensembl_protein_fasta_download(){
 	"""
 }
 
+decoys = Channel.create()
 /**
  * Decompress all the data downloaded from ENSEMBL 
  */ 
@@ -104,7 +108,7 @@ process gunzip_ensembl_files{
     file(fasta_file) from ensembl_fasta_gz_databases
 
     output: 
-    file '*pep.all.fa' into ensembl_protein_database
+    file '*pep.all.fa' into ensembl_protein_database, decoys
     file '*cdna.all.fa' into ensembl_cdna_database, ensembl_cdna_database_sub
     file '*ncrna.fa' into ensembl_ncrna_database, ensembl_ncrna_database_sub
 	file '*.gtf' into gtf
@@ -145,7 +149,7 @@ process add_ncrna {
   file ensembl_config
 
   output:
-  file('*.fa') into optional_ncrna
+  file('*.fa') into optional_ncrna, decoys
 
   script:
   """
@@ -168,40 +172,18 @@ process add_pseudogenes {
   file ensembl_config
 
   output:
-  file('*.fa') into optional_pseudogenes
+  file('*.fa') into optional_pseudogenes, decoys
 
   script:
   """
-  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb proteindb_from_pseudogenes_DNAseq.fa --include_biotypes "${pseudogene_biotypes}"
+  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb proteindb_from_pseudogenes_DNAseq.fa --include_biotypes "${pseudogene_biotypes}" --skip_including_all_cds
   """
-}
-
-/**
- * Merge all the protein databases, for example: ensembl proteins + ncrna + pseudogenes  
- */
-process merge_databases_final_proteindb {
-
-    publishDir "result", mode: 'copy', overwrite: true 
-
-    input:
-    file a from ensembl_protein_database
-    file b from optional_ncrna
-    file c from optional_pseudogenes
-
-    output: 
-    file '*.fa' into final_databases
-
-    script: 
-    """
-    cat "${a}" "${b}" "${c}" >> "${params.final_database_protein}"
-    """ 
-
 }
 
 (altorfs_seq) = ( !params.altorfs? [Channel.empty()] : [ensembl_cdna_database] ) 
 
 /**
- * Creates the pseudogenes protein database
+ * Creates the altORFs protein database
  */
 process altorfs_proteindb {
 
@@ -213,12 +195,34 @@ process altorfs_proteindb {
   file ensembl_config
 
   output:
-  file('*.fa') into altorfs_proteindb
+  file('*.fa') into optional_altorfs, decoys
 
   script:
   """
-  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb proteindb_from_altORFs_DNAseq.fa --include_biotypes "${protein_coding_biotypes}"
+  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb proteindb_from_altORFs_DNAseq.fa --include_biotypes "${protein_coding_biotypes}" --skip_including_all_cds
   """
+}
+
+/**
+ * Merge all the protein databases, for example: ensembl proteins + ncrna + pseudogenes  + altorfs
+ */
+process merge_databases_final_proteindb {
+
+    publishDir "result", mode: 'copy', overwrite: true 
+
+    input:
+    file a from ensembl_protein_database
+    file b from optional_ncrna
+    file c from optional_pseudogenes
+    file d from optional_altorfs
+
+    output: 
+    file '*.fa' into final_databases, decoys
+
+    script: 
+    """
+    cat "${a}" "${b}" "${c}" "${d}" >> "${params.final_database_protein}"
+    """ 
 }
 
 /* Mutations to proteinDB */
@@ -337,7 +341,6 @@ process merge_vcf_ensembl_files{
     """
 }
 
-
 /**
  * Generate protein database from ENSEMBL vcf file 
  */ 
@@ -452,10 +455,9 @@ process cds_GRCh37_download{
 	gunzip *.gz
 	"""
 }
-
 /**
  * Download all cBioPortal studies using git-lfs
- */
+*/
  process download_all_cbioportal {
  	publishDir "result", mode: 'copy', overwrite: true
  	
@@ -476,7 +478,7 @@ process cds_GRCh37_download{
  	"""
  }
  
-/**
+ /**
  * Generate proteinDB from cBioPortal mutations and split by tissue type
  */
  process cbioportal_proteindb{
