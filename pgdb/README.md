@@ -6,7 +6,7 @@ Run the workflow:
 	
 	git clone https://github.com/bigbio/nf-workflows.git
 	
-	cd pgdb
+	cd nf-workflows/pgdb/
 	
 	nextflow run main.nf --tool_basepath path_to_pygatk_base_dir --cosmic_user_name username --cosmic_password password 
  
