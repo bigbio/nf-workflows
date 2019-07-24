@@ -480,7 +480,7 @@ process cds_GRCh37_download{
  	
  	output:
  	file('cbioportal_allstudies_data_mutations_mskcc.txt') into cbio_mutations
- 	file('cbioportal_all_data_clinical_sample.txt') into cbio_samples
+ 	file('cbioportal_allstudies_data_clinical_sample.txt') into cbio_samples
  	
  	script:
  	"""
