@@ -43,7 +43,7 @@ ensembl_config = file(params.ensembl_config)
 
 params.cbioportal_config = "${baseDir}/configs/cbioportal_config.yaml"
 cbioportal_config = file(params.cbioportal_config)
-
+	
 /* Biotype groups according to: 
  * https://www.ensembl.org/Help/Faq?id=468 and 
  * http://vega.archive.ensembl.org/info/about/gene_and_transcript_types.html
