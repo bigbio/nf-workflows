@@ -8,7 +8,7 @@ Run the workflow:
 	
 	cd nf-workflows/pgdb/
 	
-	nextflow run main.nf --tool_basepath path_to_pygatk_base_dir --cosmic_user_name username --cosmic_password password 
+	nextflow run main.nf --tool_basepath path_to_pygatk_base_dir --taxonomy 9606 --cosmic_user_name username --cosmic_password password 
  
  
 Required tools:
