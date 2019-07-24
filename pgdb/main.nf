@@ -67,7 +67,7 @@ cosmic_config = file(params.cosmic_config)
 
 params.gencode_url = "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19"
 //params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.vcf.bgz"
-params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.22.vcf.bgz" //for testing use only chr22
+params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.*.vcf.bgz" //for testing use only chr22
 ZCAT = (System.properties['os.name'] == 'Mac OS X' ? 'gzcat' : 'zcat')
 
 /*
@@ -339,11 +339,11 @@ process ensembl_vcf_proteinDB {
 
   script:
   """
-  python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file "${ensembl_config}" --af_field "${params.af_field}" --include_biotypes "${biotypes['protein_coding']}" --input_fasta ${f} --gene_annotations_gtf ${g} --vep_annotated_vcf ${v} --output_proteindb proteindb_from_ensembl_vcf.fa
+  python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file "${ensembl_config}" --af_field "${params.af_field}" --include_biotypes "${biotypes['protein_coding']}" --input_fasta ${f} --gene_annotations_gtf ${g} --vep_annotated_vcf ${v} --output_proteindb "proteindb_from_${v}.fa"
   """
 }
 /**
- * Concatenate vcf files downloaded from ENSEMBL (variants of homo sapiens is in multiple vcf files, one per chr) 
+ * Concatenate proteinDBs generated per chr into one 
  */ 
 process merge_vcf_ensembl_files{
 	
@@ -404,14 +404,14 @@ process gnomad_download{
 process extract_gnomad_vcf{
 	
 	input:
-	file(gnomad_vcf_bgz)
+	file g from gnomad_vcf_bgz
 	
 	output:
-	file('gnomad.vcf') into gnomad_vcf
+	file "${g}.vcf" into gnomad_vcf
 	
 	script:
 	"""
-	$ZCAT ${gnomad_vcf_bgz} > gnomad.vcf
+	$ZCAT ${g} > "${g}".vcf
 	"""
 }
 
@@ -419,22 +419,39 @@ process extract_gnomad_vcf{
  * Generate gmomAD proteinDB
  */
 process gnomad_proteindb{
-	
-	publishDir "result", mode: 'copy', overwrite: true
-	
+		
 	input:
 	file ensembl_config
-	file gnomad_vcf
+	file v from gnomad_vcf
 	file gencode_fasta
 	file gencode_gtf
 	
 	output:
-	file 'proteindb_from_grnomad_vcf.fa' into gnomad_vcf_proteindb
+	file "${v}_proteinDB.fa" into gnomad_vcf_proteindb
 	
 	script:
 	"""
-	python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file ${ensembl_config} --vep_annotated_vcf ${gnomad_vcf} --input_fasta ${gencode_fasta} --gene_annotations_gtf ${gencode_gtf} --output_proteindb proteindb_from_grnomad_vcf.fa --af_field controls_AF --transcript_index 6 --biotype_str transcript_type --annotation_field_name vep
+	python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file ${ensembl_config} --vep_annotated_vcf ${gnomad_vcf} --input_fasta ${gencode_fasta} --gene_annotations_gtf ${gencode_gtf} --output_proteindb "${v}_proteinDB.fa" --af_field controls_AF --transcript_index 6 --biotype_str transcript_type --annotation_field_name vep
 	"""
+}
+
+/**
+ * Concatenate generated proteinDBs (per chr) into one 
+ */ 
+process merge_vcf_gnomad_files{
+	
+    publishDir "result", mode: 'copy', overwrite: true
+
+    input: 
+    file vcf_proteinDB from gnomad_vcf_proteindb
+
+    output: 
+    file("gnomAD_vcf_proteinDB.fa") into gnomad_vcf_proteinDB
+    
+    script: 
+    """
+    cat ${vcf_proteinDB} >> gnomAD_vcf_proteinDB.fa
+    """
 }
 
 /****** cBioPortal mutations *****/
@@ -500,7 +517,7 @@ process cds_GRCh37_download{
  * Decoy sequences will have "_DECOY" prefix tag to the protein accession.
  * 
  * FIX: to be added to decoys channel: optional_ncrna, optional_pseudogenes, optional_altorfs, final_databases,
- 	cosmic_proteindbs, proteinDB_vcf, gnomad_vcf_proteindb, cBioportal_proteindbs
+ 	cosmic_proteindbs, proteinDB_vcf, gnomad_vcf_proteinDB, cBioportal_proteindbs
 
  */
 process create_decoy_db {
