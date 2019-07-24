@@ -37,7 +37,7 @@ params.taxonomy = "9103"
 params.ensembl_downloader_config = "${baseDir}/configs/ensembl_downloader_config.yaml"
 ensembl_downloader_config = file(params.ensembl_downloader_config)
 params.af_field = "" //set to empty when AF_field does not exist in the INFO filed or filtering on AF is not desired
-params.ncrna = true 
+
 params.ensembl_config = "${baseDir}/configs/ensembl_config.yaml"
 ensembl_config = file(params.ensembl_config)
 
@@ -45,37 +45,40 @@ ensembl_config = file(params.ensembl_config)
  * https://www.ensembl.org/Help/Faq?id=468 and 
  * http://vega.archive.ensembl.org/info/about/gene_and_transcript_types.html
 */
-protein_coding_biotypes = "protein_coding,polymorphic_pseudogene,non_stop_decay,nonsense_mediated_decay,IG_C_gene,IG_D_gene,IG_J_gene,IG_V_gene,TR_C_gene,TR_D_gene,TR_J_gene,TR_V_gene,TEC"
-pseudogene_biotypes = "pseudogene,IG_C_pseudogene,IG_J_pseudogene,IG_V_pseudogene,IG_pseudogene,TR_V_pseudogene,TR_J_pseudogene,processed_pseudogene,rRNA_pseudogene,transcribed_processed_pseudogene,transcribed_unitary_pseudogene,transcribed_unprocessed_pseudogene,translated_unprocessed_pseudogene,unitary_pseudogene,unprocessed_pseudogene,translated_processed_pseudogene"
-ncRNA_biotypes = "lncRNA,Mt_rRNA,Mt_tRNA,miRNA,misc_RNA,rRNA,retained_intron,ribozyme,sRNA,scRNA,scaRNA,snRNA,snoRNA,vaultRNA,TEC"
-//lncRNA_biotypes = "lncRNA,retained_intron"
-//sncRNA_biotypes = "Mt_rRNA,Mt_tRNA,miRNA,misc_RNA,rRNA,ribozyme,sRNA,scRNA,scaRNA,snRNA,snoRNA,vaultRNA"
+biotypes = [
+	'protein_coding': "protein_coding,polymorphic_pseudogene,non_stop_decay,nonsense_mediated_decay,IG_C_gene,IG_D_gene,IG_J_gene,IG_V_gene,TR_C_gene,TR_D_gene,TR_J_gene,TR_V_gene,TEC", 
+	'pseudogene': "pseudogene,IG_C_pseudogene,IG_J_pseudogene,IG_V_pseudogene,IG_pseudogene,TR_V_pseudogene,TR_J_pseudogene,processed_pseudogene,rRNA_pseudogene,transcribed_processed_pseudogene,transcribed_unitary_pseudogene,transcribed_unprocessed_pseudogene,translated_unprocessed_pseudogene,unitary_pseudogene,unprocessed_pseudogene,translated_processed_pseudogene", 
+	'ncRNA': "lncRNA,Mt_rRNA,Mt_tRNA,miRNA,misc_RNA,rRNA,retained_intron,ribozyme,sRNA,scRNA,scaRNA,snRNA,snoRNA,vaultRNA,TEC", 
+	'lncRNA': "lncRNA,retained_intron", 
+	'sncRNA': "Mt_rRNA,Mt_tRNA,miRNA,misc_RNA,rRNA,ribozyme,sRNA,scRNA,scaRNA,snRNA,snoRNA,vaultRNA"
+	]
 
+// FIX: no effect on resume - does not lead to re-generation of the final database on resume
+params.ncrna = true 
 params.pseudogenes = true
-params.altorfs = true 
+params.altorfs = true
 
 params.final_database_protein = "final_database_protein.fa"
 protein_decoy_config = "${baseDir}/configs/protein_decoy.yaml"
-params.final_decoy_database_protein = "final_database_protein_decoy.fa"
 params.decoy_prefix = "decoy_"
 
 params.cosmic_config = "${baseDir}/configs/cosmic_config.yaml"
 cosmic_config = file(params.cosmic_config)
 
 params.gencode_url = "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19"
-params.gnomad_file_url = "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.22.vcf.bgz" //only chr22 for testing 
-//"gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.vcf.bgz"
+//params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.vcf.bgz"
+params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.22.vcf.bgz" //for testing use only chr22
 ZCAT = (System.properties['os.name'] == 'Mac OS X' ? 'gzcat' : 'zcat')
-
-cbioportal_config = "${baseDir}/configs/cbioportal_config.yaml"
 
 /*
  * Required parameters
-*/
+ */
 params.cosmic_user_name = ""
 params.cosmic_password = ""
 
 /* Pipeline START */
+
+decoys = Channel.create()
 
 /** 
  * Download data from ensembl for the particular species. 
@@ -96,7 +99,6 @@ process ensembl_protein_fasta_download(){
 	"""
 }
 
-decoys = Channel.create()
 /**
  * Decompress all the data downloaded from ENSEMBL 
  */ 
@@ -108,7 +110,7 @@ process gunzip_ensembl_files{
     file(fasta_file) from ensembl_fasta_gz_databases
 
     output: 
-    file '*pep.all.fa' into ensembl_protein_database
+    file '*.pep.all.fa' into ensembl_protein_database, decoys
     file '*cdna.all.fa' into ensembl_cdna_database, ensembl_cdna_database_sub
     file '*ncrna.fa' into ensembl_ncrna_database, ensembl_ncrna_database_sub
 	file '*.gtf' into gtf
@@ -117,7 +119,6 @@ process gunzip_ensembl_files{
     gunzip -d --force ${fasta_file}
     """ 
 }
-
 /* Concatenate cDNA and ncRNA databases */
 process merge_cdnas{
   
@@ -126,7 +127,7 @@ process merge_cdnas{
   file b from ensembl_ncrna_database_sub
   
   output: 
-  file '*.fa' into total_cdnas
+  file 'total_cdnas.fa' into total_cdnas
 
   script: 
   """
@@ -139,21 +140,21 @@ process merge_cdnas{
 /**
  * Creates the ncRNA protein database
  */
-process add_ncrna {
+process add_ncrna{
 
   //container 'quay.io/bigbio/pypgatk:0.0.1'
   publishDir "result", mode: 'copy', overwrite: true
-
+  
   input:
-  file x from ncrna_cdna
+  file x from total_cdnas
   file ensembl_config
 
   output:
-  file('*.fa') into optional_ncrna
+  file 'proteindb_from_ncRNAs_DNAseq.fa' into optional_ncrna
 
   script:
   """
-  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta ${x} --output_proteindb proteindb_from_ncRNAs_DNAseq.fa --include_biotypes "${ncRNA_biotypes}" --skip_including_all_cds
+  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta ${x} --output_proteindb proteindb_from_ncRNAs_DNAseq.fa --include_biotypes "${biotypes['ncRNA']}" --skip_including_all_cds
   """
 }
 
@@ -166,40 +167,39 @@ process add_pseudogenes {
 
   //container 'quay.io/bigbio/pypgatk:0.0.1'
   publishDir "result", mode: 'copy', overwrite: true
-
+  
   input:
   file x from pseudogenes_cdna
   file ensembl_config
 
   output:
-  file('*.fa') into optional_pseudogenes
+  file 'proteindb_from_pseudogenes_DNAseq.fa' into optional_pseudogenes
 
   script:
   """
-  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb proteindb_from_pseudogenes_DNAseq.fa --include_biotypes "${pseudogene_biotypes}" --skip_including_all_cds
+  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb proteindb_from_pseudogenes_DNAseq.fa --include_biotypes "${biotypes['pseudogene']}" --skip_including_all_cds
   """
 }
 
-(altorfs_seq) = ( !params.altorfs? [Channel.empty()] : [ensembl_cdna_database] ) 
-
+(altorfs_seq) = ( !params.altorfs? [Channel.empty()] : [ensembl_cdna_database] )
 /**
  * Creates the altORFs protein database
  */
-process altorfs_proteindb {
+process add_altorfs {
 
   //container 'quay.io/bigbio/pypgatk:0.0.1'
   publishDir "result", mode: 'copy', overwrite: true
-
+  
   input:
   file x from altorfs_seq
   file ensembl_config
 
   output:
-  file('*.fa') into optional_altorfs
+  file('proteindb_from_altORFs_DNAseq.fa') into optional_altorfs
 
   script:
   """
-  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb proteindb_from_altORFs_DNAseq.fa --include_biotypes "${protein_coding_biotypes}" --skip_including_all_cds
+  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb proteindb_from_altORFs_DNAseq.fa --include_biotypes "${biotypes['protein_coding']}'" --skip_including_all_cds
   """
 }
 
@@ -217,14 +217,13 @@ process merge_databases_final_proteindb {
     file d from optional_altorfs
 
     output: 
-    file '*.fa' into final_databases, decoys
+    file "${params.final_database_protein}" into final_databases
 
     script: 
     """
     cat "${a}" "${b}" "${c}" "${d}" >> "${params.final_database_protein}"
     """ 
 }
-
 /* Mutations to proteinDB */
 
 /**
@@ -323,6 +322,27 @@ process gunzip_vcf_ensembl_files{
 }
 
 /**
+ * Generate protein database from ENSEMBL vcf file 
+ */ 
+process ensembl_vcf_proteinDB {
+
+  //container 'quay.io/bigbio/pypgatk:0.0.1'
+  
+  input:
+  file f from total_cdnas
+  file g from gtf
+  file v from ensembl_vcf_files
+  file ensembl_config
+  
+  output:
+  file "proteindb_from_${v}.fa" into ensembl_vcf_proteindb
+
+  script:
+  """
+  python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file "${ensembl_config}" --af_field "${params.af_field}" --include_biotypes "${biotypes['protein_coding']}" --input_fasta ${f} --gene_annotations_gtf ${g} --vep_annotated_vcf ${v} --output_proteindb proteindb_from_ensembl_vcf.fa
+  """
+}
+/**
  * Concatenate vcf files downloaded from ENSEMBL (variants of homo sapiens is in multiple vcf files, one per chr) 
  */ 
 process merge_vcf_ensembl_files{
@@ -330,40 +350,16 @@ process merge_vcf_ensembl_files{
     publishDir "result", mode: 'copy', overwrite: true
 
     input: 
-    file(vcf_file) from ensembl_vcf_files
+    file(vcf_proteinDB) from ensembl_vcf_proteindb
 
     output: 
-    file("${params.taxonomy}.vcf") into ensembl_vcf_file
+    file("${params.taxonomy}_vcf_proteinDB.fa") into proteinDB_vcf
     
     script: 
     """
-    cat ${vcf_file} >> "${params.taxonomy}".vcf
+    cat ${vcf_proteinDB} >> "${params.taxonomy}"_vcf_proteinDB.fa
     """
 }
-
-/**
- * Generate protein database from ENSEMBL vcf file 
- */ 
-process ensembl_vcf_proteinDB {
-
-  //container 'quay.io/bigbio/pypgatk:0.0.1'
-  publishDir "result", mode: 'copy', overwrite: true
-
-  input:
-  file f from total_cdnas
-  file g from gtf
-  file v from ensembl_vcf_file
-  file ensembl_config
-  
-  output:
-  file "proteindb_from_ensembl_vcf.fa" into ensembl_vcf_proteindb
-
-  script:
-  """
-  python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file "${ensembl_config}" --af_field "${params.af_field}" --include_biotypes "${protein_coding_biotypes}" --input_fasta ${f} --gene_annotations_gtf ${g} --vep_annotated_vcf ${v} --output_proteindb proteindb_from_ensembl_vcf.fa
-  """
-}
-
 /****** gnomAD variatns *****/
 
 /**
@@ -441,6 +437,7 @@ process gnomad_proteindb{
 	"""
 }
 
+/****** cBioPortal mutations *****/
 /**
  * Download GRCh37 CDS file from ENSEMBL release 75 
  */
@@ -478,7 +475,7 @@ process cds_GRCh37_download{
  	"""
  }
  
- /**
+/**
  * Generate proteinDB from cBioPortal mutations and split by tissue type
  */
  process cbioportal_proteindb{
@@ -501,6 +498,10 @@ process cds_GRCh37_download{
 /**
  * Create the decoy database using DecoyPYrat
  * Decoy sequences will have "_DECOY" prefix tag to the protein accession.
+ * 
+ * FIX: to be added to decoys channel: optional_ncrna, optional_pseudogenes, optional_altorfs, final_databases,
+ 	cosmic_proteindbs, proteinDB_vcf, gnomad_vcf_proteindb, cBioportal_proteindbs
+
  */
 process create_decoy_db {
 	//container 'quay.io/bigbio/pypgatk:0.0.1'
@@ -514,6 +515,6 @@ process create_decoy_db {
 
 	script:
 	"""
-	python ${container_path}pypgatk_cli.py generate-decoy --config_file "${protein_decoy_config}" --input "${x}" --decoy_prefix "${params.decoy_prefix}" --output "${params.decoy_prefix}${x}"
+	python ${container_path}pypgatk_cli.py generate-decoy --config_file "${protein_decoy_config}" --input "${x}" --decoy_prefix "${params.decoy_prefix}" --output "${params.decoy_prefix}${x}" 
 	"""
 }
