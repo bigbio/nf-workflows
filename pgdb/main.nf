@@ -41,6 +41,9 @@ params.af_field = "" //set to empty when AF_field does not exist in the INFO fil
 params.ensembl_config = "${baseDir}/configs/ensembl_config.yaml"
 ensembl_config = file(params.ensembl_config)
 
+params.cbioportal_config = "${baseDir}/configs/cbioportal_config.yaml"
+cbioportal_config = file(params.cbioportal_config)
+
 /* Biotype groups according to: 
  * https://www.ensembl.org/Help/Faq?id=468 and 
  * http://vega.archive.ensembl.org/info/about/gene_and_transcript_types.html
@@ -488,7 +491,7 @@ process cds_GRCh37_download{
  	git lfs pull -I public --include "data_mutations_mskcc.txt"
  	cd ..
  	cat datahub/public/*/data_mutations_mskcc.txt > cbioportal_allstudies_data_mutations_mskcc.txt
- 	cat datahub/public/*/*data*clinical*sample.txt > cbioportal_all_data_clinical_sample.txt
+ 	cat datahub/public/*/*data*clinical*sample.txt > cbioportal_allstudies_data_clinical_sample.txt
  	"""
  }
  
