@@ -69,8 +69,8 @@ params.cosmic_config = "${baseDir}/configs/cosmic_config.yaml"
 cosmic_config = file(params.cosmic_config)
 
 params.gencode_url = "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19"
-//params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.vcf.bgz"
-params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.*.vcf.bgz" //for testing use only chr22
+params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.vcf.bgz"
+//params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.*.vcf.bgz"
 ZCAT = (System.properties['os.name'] == 'Mac OS X' ? 'gzcat' : 'zcat')
 
 /*
@@ -394,7 +394,7 @@ process gnomad_download{
 	val g from params.gnomad_file_url
 	
 	output:
-	file('*.vcf.bgz') into gnomad_vcf_bgz
+	file '*.vcf.bgz' into gnomad_vcf_bgz
 	script:
 	"""
 	gsutil cp ${g} .
@@ -414,7 +414,7 @@ process extract_gnomad_vcf{
 	
 	script:
 	"""
-	$ZCAT ${g} > "${g}".vcf
+	$ZCAT ${g} > ${g}.vcf
 	"""
 }
 
@@ -440,7 +440,7 @@ process gnomad_proteindb{
 
 /**
  * Concatenate generated proteinDBs (per chr) into one 
- */ 
+ */
 process merge_vcf_gnomad_files{
 	
     publishDir "result", mode: 'copy', overwrite: true
@@ -450,7 +450,7 @@ process merge_vcf_gnomad_files{
 
     output: 
     file("gnomAD_vcf_proteinDB.fa") into gnomad_vcf_proteinDB
-    
+
     script: 
     """
     cat ${vcf_proteinDB} >> gnomAD_vcf_proteinDB.fa
