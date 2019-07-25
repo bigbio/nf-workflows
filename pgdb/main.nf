@@ -434,7 +434,7 @@ process gnomad_proteindb{
 	
 	script:
 	"""
-	python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file ${ensembl_config} --vep_annotated_vcf ${gnomad_vcf} --input_fasta ${gencode_fasta} --gene_annotations_gtf ${gencode_gtf} --output_proteindb "${v}_proteinDB.fa" --af_field controls_AF --transcript_index 6 --biotype_str transcript_type --annotation_field_name vep
+	python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file ${ensembl_config} --vep_annotated_vcf ${v} --input_fasta ${gencode_fasta} --gene_annotations_gtf ${gencode_gtf} --output_proteindb "${v}_proteinDB.fa" --af_field controls_AF --transcript_index 6 --biotype_str transcript_type --annotation_field_name vep
 	"""
 }
 
