@@ -410,7 +410,7 @@ process extract_gnomad_vcf{
 	file g from gnomad_vcf_bgz
 	
 	output:
-	file "${g}.vcf" into gnomad_vcf
+	file "*.vcf" into gnomad_vcf
 	
 	script:
 	"""
