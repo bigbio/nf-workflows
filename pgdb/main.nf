@@ -61,7 +61,7 @@ params.ncrna = true
 params.pseudogenes = true
 params.altorfs = true
 
-params.final_database_protein = "final_database_protein.fa"
+params.final_database_protein = "final_proteinDB.fa"
 protein_decoy_config = "${baseDir}/configs/protein_decoy.yaml"
 params.decoy_prefix = "decoy_"
 
@@ -153,11 +153,11 @@ process add_ncrna{
   file ensembl_config
 
   output:
-  file 'proteindb_from_ncRNAs_DNAseq.fa' into optional_ncrna
+  file 'ncRNAs_proteinDB.fa' into optional_ncrna
 
   script:
   """
-  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta ${x} --output_proteindb proteindb_from_ncRNAs_DNAseq.fa --include_biotypes "${biotypes['ncRNA']}" --skip_including_all_cds
+  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta ${x} --output_proteindb ncRNAs_proteinDB.fa --include_biotypes "${biotypes['ncRNA']}" --skip_including_all_cds
   """
 }
 
@@ -176,11 +176,11 @@ process add_pseudogenes {
   file ensembl_config
 
   output:
-  file 'proteindb_from_pseudogenes_DNAseq.fa' into optional_pseudogenes
+  file 'pseudogenes_proteinDB.fa' into optional_pseudogenes
 
   script:
   """
-  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb proteindb_from_pseudogenes_DNAseq.fa --include_biotypes "${biotypes['pseudogene']}" --skip_including_all_cds
+  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb pseudogenes_proteinDB.fa --include_biotypes "${biotypes['pseudogene']}" --skip_including_all_cds
   """
 }
 
@@ -198,11 +198,11 @@ process add_altorfs {
   file ensembl_config
 
   output:
-  file('proteindb_from_altORFs_DNAseq.fa') into optional_altorfs
+  file('altorfs_proteinDB.fa') into optional_altorfs
 
   script:
   """
-  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb proteindb_from_altORFs_DNAseq.fa --include_biotypes "${biotypes['protein_coding']}'" --skip_including_all_cds
+  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb altorfs_proteinDB.fa --include_biotypes "${biotypes['protein_coding']}'" --skip_including_all_cds
   """
 }
 
@@ -338,11 +338,11 @@ process ensembl_vcf_proteinDB {
   file ensembl_config
   
   output:
-  file "proteindb_from_${v}.fa" into ensembl_vcf_proteindb
+  file "${v}_proteinDB.fa" into ensembl_vcf_proteindb
 
   script:
   """
-  python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file "${ensembl_config}" --af_field "${params.af_field}" --include_biotypes "${biotypes['protein_coding']}" --input_fasta ${f} --gene_annotations_gtf ${g} --vep_annotated_vcf ${v} --output_proteindb "proteindb_from_${v}.fa"
+  python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file "${ensembl_config}" --af_field "${params.af_field}" --include_biotypes "${biotypes['protein_coding']}" --input_fasta ${f} --gene_annotations_gtf ${g} --vep_annotated_vcf ${v} --output_proteindb "${v}_proteinDB.fa"
   """
 }
 /**
