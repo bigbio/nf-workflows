@@ -75,8 +75,8 @@ params.gencode_url = "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/re
 //params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.vcf.bgz"
 params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/exomes/gnomad.exomes.r2.1.1.sites.2*.vcf.bgz" //used only for testing the pipeline
 
-params.cosmic_user_name = "husen.umer@icm.uu.se"
-params.cosmic_password = "Hussein-86"
+params.cosmic_user_name = ""
+params.cosmic_password = ""
 
 ZCAT = (System.properties['os.name'] == 'Mac OS X' ? 'gzcat' : 'zcat')
 
