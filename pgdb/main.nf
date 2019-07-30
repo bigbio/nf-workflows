@@ -8,51 +8,145 @@
  - Yasset Perez-Riverol <ypriverol@gmail.com>
  - Husen M. Umer <husensofteng@gmail.com>
 ----------------------------------------------------------------------------------------
-----------------------------------------------------------------------------------------
-Pipeline overview:
- 	Download the Fasta protein database from ENSEMBL (default species = 9606), latest release
- 	Generate ncRNA, psudogenes, ORFs databases   
- 	Download ENSEMBL variants (VCFs, default species = 9606)
- 	Generate ENSEMBL variant protein database
- 	Download gnomAD variants
- 	Generate gnomAD variant protein database
- 	Download mutations from COSMIC
- 	Generate COSMIC mutated protein databases (one database for all mutations, a database per tumor type)
- 	Download mutations from cBioPortal (default = all stuides)
- 	Generate cBioPortal mutated protein databases (one database for all mutations, a database per tumor type)
- 	Concatenate all databases
- 	Generate a corresponding decoy database for the concatenated database
- ----------------------------------------------------------------------------------------
 */
 
 /*
  * Define the default parameters
 */
+def helpMessage() {
+    log.info """
+    
+    Usage:
+    
+    The typical command for running the pipeline is as follows:
+    
+    nextflow run main.nf --tool_basepath ~/git/ --taxonomy 9606 --ensembl false --gnomad false --cosmic false --cbioportal false
+    
+    This command will generate a protein datbase for non-coding RNAs, pseudogenes, altORFs. Note the other flags are set to false. 
+    A final fasta file is created by merging them all and the canonical proteins are appended. 
+    The resulting database is stored in result/final_proteinDB.fa and its decoy is stored under result/decoy_final_proteinDB.fa
 
+    Options:
+    
+    Process flags
+      --ncrna [true | false]             Generate protein datbase from non-coding RNAs
+      --pseudogenes [true | false]       Generate protein datbase from pseudogenes
+      --altorfs [true | false]           Generate alternative ORFs from canonical proteins
+      --cbioportal [true | false]        Download cBioPortal studies and genrate protein database
+      --cosmic [true | false]            Download COSMIC files and genrate protein database
+      --ensembl [true | false]           Download ENSEMBL variants and genrate protein database
+      --gnomad [true | false]            Download gnomAD files and genrate protein database
+
+      --tool_basepath                    Path to pypgath install base directory
+	
+    Configuration files                  By default all config files are located in the configs/ directory. 
+      --ensembl_downloader_config        Patht to configuration file for ENSEMBL download parameters
+      --ensembl_config                   Patht to configuration file for parameters in generating protein databases 
+                                             from ENSMEBL sequences
+      --cosmic_config                    Patht to configuration file for parameters in generating protein databases 
+                                             from COSMIC mutations
+      --cbioportal_config                Patht to configuration file for parameters in generating protein databases 
+                                             from cBioPortal mutations
+      --protein_decoy_config             Patht to configuration file for parameters used in generating decoy databses
+    
+    Database parameters:
+      --taxonomy                         Taxonomy (Taxon ID) for the species to download ENSEMBL data, default is 9606 for humans. 
+                                         For the list of supported taxonomies see: https://www.ensembl.org/info/about/species.html   
+    
+      --cosmic_tissue_type               Specify a tissue type to limit the COSMIC mutations for a particular caner type 
+                                             (default is all, i.e. mutations from all tumor types are used)  
+      --cbioportal_tissue_type           Specify a tissue type to limit the cBioPortal mutations for a particular caner type 
+                                            (default is all, i.e. mutations from all tumor types are used)
+      --af_field                         Allele frequency identifier string in VCF Info column, if no AF info is given set it to empty. 
+                                            For human VCF files from ENSEMBL the default is set to MAF
+    
+    Output parameters:
+      --final_database_protein           Output file name for the final database protein fasta file under the result/ directory.
+      --decoy_prefix                     Strig to be used as prefix for the generated decoy sequences
+    
+    Data download parameters:
+      --cosmic_user_name                 User name (or email) for COSMIC account
+      --cosmic_password                  Password for COSMIC account
+                                         In order to be able to download COSMIC data, the user should provide a user and password. 
+                                         Please first register in COSMIC database (https://cancer.sanger.ac.uk/cosmic/register).
+
+      --gencode_url                      URL for downloading GENCODE datafiles: gencode.v19.pc_transcripts.fa.gz and gencode.v19.annotation.gtf.gz 
+      --gnomad_file_url                  URL for downloading gnomAD VCF file(s)
+    
+      --help                             Print this help document
+
+    
+    ========================================================================================
+    Pipeline Tasks:
+    ========================================================================================
+    
+    Get fasta proteins, cdnas, ncRNAs and gtf files from ENSEMBL (default species = 9606), latest release
+        (processes: ensembl_protein_fasta_download, gunzip_ensembl_files, merge_cdnas)
+    
+    Generate ncRNA, psudogenes, altORFs databases
+        (processes: add_ncrna, add_pseudogenes , add_altorfs)
+    
+    Generate ENSEMBL variant protein database (VCFs, default species = 9606)
+        (processes: ensembl_vcf_download, gunzip_vcf_ensembl_files, ensembl_vcf_proteinDB)
+
+    Generate gnomAD variant protein database
+        (processes: gencode_download, , extract_gnomad_vcf, gnomad_proteindb)
+    
+    Generate COSMIC mutated protein database (default all cancer types)
+        (processes: cosmic_download , gunzip_cosmic_files, cosmic_proteindb) 
+    
+    Generate cBioPortal mutated protein database (default all studies and all cancer types)
+        (processes: cds_GRCh37_download, download_all_cbioportal, cbioportal_proteindb)
+    
+    Concatenate all generated databases
+        (processes: merge_proteindbs)
+        
+    Generate a decoy database from the concatenated database
+        (processes: decoy) 
+    ----------------------------------------------------------------------------------------
+    
+    """
+}
+
+params.help = false
+// Show help emssage
+if (params.help){
+    helpMessage()
+    exit 0
+}
+
+//process flag variables
 params.ncrna = true 
 params.pseudogenes = true
 params.altorfs = true
-params.ensembl = true
-params.gnomad = true
 params.cbioportal = true
 params.cosmic = true
+params.ensembl = true
+params.gnomad = true
 
+//pypgatk path
 params.tool_basepath = "./"
 container_path = "${params.tool_basepath}/py-pgatk/pypgatk/" //temp solution until we put a container on quay.io
 
-//params.release = "97" //not supported yet
-params.taxonomy = "9103"
+//data download variables
+params.cosmic_user_name = ""
+params.cosmic_password = ""
+
+//config files
 params.ensembl_downloader_config = "${baseDir}/configs/ensembl_downloader_config.yaml"
 ensembl_downloader_config = file(params.ensembl_downloader_config)
-
-params.af_field = "" //set to empty when AF_field does not exist in the INFO filed or filtering on AF is not desired
-
 params.ensembl_config = "${baseDir}/configs/ensembl_config.yaml"
 ensembl_config = file(params.ensembl_config)
-
+params.cosmic_config = "${baseDir}/configs/cosmic_config.yaml"
+cosmic_config = file(params.cosmic_config)
 params.cbioportal_config = "${baseDir}/configs/cbioportal_config.yaml"
 cbioportal_config = file(params.cbioportal_config)
-	
+params.protein_decoy_config = "${baseDir}/configs/protein_decoy.yaml"
+protein_decoy_config = file(params.protein_decoy_config)
+
+//ENSEMBL parameters
+params.taxonomy = "9606" //use 9103 for testing, smaller files
+
 /* Biotype groups according to: 
  * https://www.ensembl.org/Help/Faq?id=468 and 
  * http://vega.archive.ensembl.org/info/about/gene_and_transcript_types.html
@@ -63,24 +157,36 @@ biotypes = [
 	'ncRNA': "lncRNA,Mt_rRNA,Mt_tRNA,miRNA,misc_RNA,rRNA,retained_intron,ribozyme,sRNA,scRNA,scaRNA,snRNA,snoRNA,vaultRNA", 
 	]
 
-params.final_database_protein = "final_proteinDB.fa"
+//vcf-to-proteindb parameters
+params.cosmic_tissue_type = 'all'
+params.cbioportal_tissue_type = 'all'
+params.af_field = "" //set to empty when AF_field does not exist in the INFO filed or filtering on AF is not desired
+if (params.taxonomy == "9606"){
+	params.af_field = "MAF"
+}
 
-protein_decoy_config = "${baseDir}/configs/protein_decoy.yaml"
+//Output parameters
+params.final_database_protein = "final_proteinDB.fa"
 params.decoy_prefix = "decoy_"
 
-params.cosmic_config = "${baseDir}/configs/cosmic_config.yaml"
-cosmic_config = file(params.cosmic_config)
-
+//gencode download parameters
 params.gencode_url = "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19"
-//params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.vcf.bgz"
-params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/exomes/gnomad.exomes.r2.1.1.sites.2*.vcf.bgz" //used only for testing the pipeline
+params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.vcf.bgz"
+//params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/exomes/gnomad.exomes.r2.1.1.sites.vcf.bgz" //use for testing the pipeline, smaller file - only exomes
 
-params.cosmic_user_name = ""
-params.cosmic_password = ""
+//pipeline checks
+if (params.cosmic && (params.cosmic_user_name=="" || params.cosmic_password=="")){
+	exit 1, "User name and password has to be provided. In order to be able to download COSMIC data, the user should provide a user and password. Please first register in COSMIC database (https://cancer.sanger.ac.uk/cosmic/register)."
+}
 
+//pipeline OS-specific commands
 ZCAT = (System.properties['os.name'] == 'Mac OS X' ? 'gzcat' : 'zcat')
 
-/* Pipeline START */
+
+/******************************    Pipeline START    ******************************
+			*****************************************************************
+						**************************************
+*/
 
 /** 
  * Download data from ensembl for the particular species. 
@@ -281,7 +387,7 @@ process cosmic_proteindb{
 	
 	script:
 	"""
-	python ${container_path}pypgatk_cli.py cosmic-to-proteindb --config_file "${cosmic_config}" --input_mutation ${m} --input_genes ${g} --output_db cosmic_proteinDB.fa
+	python ${container_path}pypgatk_cli.py cosmic-to-proteindb --config_file "${cosmic_config}" --input_mutation ${m} --input_genes ${g} --tissue_type ${params.cosmic_tissue_type} --output_db cosmic_proteinDB.fa
 	"""
 }
 
@@ -290,7 +396,7 @@ merged_databases = merged_databases.mix(cosmic_proteindbs)
 /** 
  * Download VCF files from ensembl for the particular species. 
  */
-process ensembl_vcf_download(){
+process ensembl_vcf_download{
     
     //container 'quay.io/bigbio/pypgatk:0.0.1'
     
@@ -398,7 +504,7 @@ process gnomad_download{
 	val g from params.gnomad_file_url
 	
 	output:
-	file '*.vcf.bgz' into gnomad_vcf_bgz
+	file "*.vcf.bgz" into gnomad_vcf_bgz
 	script:
 	"""
 	gsutil cp ${g} .
@@ -520,22 +626,15 @@ process cds_GRCh37_download{
 	
 	script:
 	"""
-	python ${container_path}pypgatk_cli.py cbioportal-to-proteindb --config_file "${cbioportal_config}" --input_mutation ${m} --input_cds ${g} --clinical_sample_file ${s} --output_db cbioPortal_proteinDB.fa
+	python ${container_path}pypgatk_cli.py cbioportal-to-proteindb --config_file "${cbioportal_config}" --input_mutation ${m} --input_cds ${g} --clinical_sample_file ${s} --tissue_type ${params.cbioportal_tissue_type} --output_db cbioPortal_proteinDB.fa
 	"""
 }
 
 merged_databases = merged_databases.mix(cBioportal_proteindb)
-
-/**
- * Create the decoy database using DecoyPYrat
- * Decoy sequences will have "_DECOY" prefix tag to the protein accession.
- */
  
 /**
- * Create the decoy database using DecoyPYrat
- * Decoy sequences will have "_DECOY" prefix tag to the protein accession.
+ * Concatenate all generated databases from merged_databases channel to the final_database_protein file
  */
-
 process merge_proteindbs {
 	
 	//container 'quay.io/bigbio/pypgatk:0.0.1'
@@ -553,6 +652,10 @@ process merge_proteindbs {
 	"""
 }
 
+/**
+ * Create the decoy database using DecoyPYrat
+ * Decoy sequences will have "_DECOY" prefix tag to the protein accession.
+ */
 process decoy {
 	
 	//container 'quay.io/bigbio/pypgatk:0.0.1'
