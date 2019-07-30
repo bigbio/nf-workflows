@@ -20,7 +20,8 @@ def helpMessage() {
     
     The typical command for running the pipeline is as follows:
     
-    nextflow run main.nf --tool_basepath /path/to/pygatk/baseDir --taxonomy 9606 --ensembl false --gnomad false --cosmic false --cbioportal false
+    nextflow run main.nf --tool_basepath /path/to/pygatk/baseDir --taxonomy 9606 
+                         --ensembl false --gnomad false --cosmic false --cbioportal false
     
     This command will generate a protein datbase for non-coding RNAs, pseudogenes, 
     altORFs. Note the other flags are set to false. 
