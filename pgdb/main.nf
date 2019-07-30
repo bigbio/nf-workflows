@@ -161,8 +161,9 @@ biotypes = [
 params.cosmic_tissue_type = 'all'
 params.cbioportal_tissue_type = 'all'
 params.af_field = "" //set to empty when AF_field does not exist in the INFO filed or filtering on AF is not desired
+af_field = params.af_field 
 if (params.taxonomy == "9606"){
-	params.af_field = "MAF"
+	af_field = "MAF"
 }
 
 //Output parameters
@@ -457,7 +458,7 @@ process ensembl_vcf_proteinDB {
   	
     script:
   	"""
-  	python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file ${e} --af_field "${params.af_field}" --include_biotypes "${biotypes['protein_coding']}" --input_fasta ${f} --gene_annotations_gtf ${g} --vep_annotated_vcf ${v} --output_proteindb "${v}_proteinDB.fa"  --var_prefix ensvar
+  	python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file ${e} --af_field "${af_field}" --include_biotypes "${biotypes['protein_coding']}" --input_fasta ${f} --gene_annotations_gtf ${g} --vep_annotated_vcf ${v} --output_proteindb "${v}_proteinDB.fa"  --var_prefix ensvar
   	"""
 }
 
