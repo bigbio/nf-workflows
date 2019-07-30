@@ -438,13 +438,6 @@ process gunzip_vcf_ensembl_files{
 /**
  * Generate protein database(s) from ENSEMBL vcf file(s) 
  */ 
-
-ensembl_vcf_files
-	.combine(total_cdnas)
-	.combine(gtf)
-	.combine(Channel.from(ensembl_config))
-	.set { ensembl_files }
-
 process ensembl_vcf_proteinDB {
 
 	//container 'quay.io/bigbio/pypgatk:0.0.1'
@@ -454,7 +447,10 @@ process ensembl_vcf_proteinDB {
 	params.ensembl
   
   	input:
-  	set file(v), file(f), file(g), val(e) from ensembl_files
+  	file v from ensembl_vcf_files
+  	file f from total_cdnas
+  	file g from gtf
+  	file e from ensembl_config
   	
   	output:
   	file "${v}_proteinDB.fa" into proteinDB_vcf
@@ -534,13 +530,6 @@ process extract_gnomad_vcf{
 /**
  * Generate gmomAD proteinDB
  */
-
-gnomad_vcf_files
-	.combine(gencode_fasta)
-	.combine(gencode_gtf)
-	.combine(Channel.from(ensembl_config))
-	.set { gnomad_files }
-
 process gnomad_proteindb{
 	
 	//container 'quay.io/bigbio/pypgatk:0.0.1'
@@ -550,7 +539,10 @@ process gnomad_proteindb{
 	params.gnomad
 	
 	input:
-	set file(v), file(f), file(g), val(e) from gnomad_files
+	file v from gnomad_vcf_files.flatten()
+	file f from gencode_fasta
+	file g from gencode_gtf
+	file e from ensembl_config
 	
 	output:
 	file "${v}_proteinDB.fa" into gnomad_vcf_proteindb
