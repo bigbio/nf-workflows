@@ -22,9 +22,11 @@ def helpMessage() {
     
     nextflow run main.nf --tool_basepath /path/to/pygatk/baseDir --taxonomy 9606 --ensembl false --gnomad false --cosmic false --cbioportal false
     
-    This command will generate a protein datbase for non-coding RNAs, pseudogenes, altORFs. Note the other flags are set to false. 
-    A final fasta file is created by merging them all and the canonical proteins are appended. 
-    The resulting database is stored in result/final_proteinDB.fa and its decoy is stored under result/decoy_final_proteinDB.fa
+    This command will generate a protein datbase for non-coding RNAs, pseudogenes, 
+    altORFs. Note the other flags are set to false. 
+    A final fasta file is created by merging them all and the canonical 
+    proteins are appended. The resulting database is stored in result/final_proteinDB.fa 
+    and its decoy is stored under result/decoy_final_proteinDB.fa
 
     Options:
     
@@ -39,38 +41,47 @@ def helpMessage() {
 
       --tool_basepath                    Path to pypgath install base directory
 	
-    Configuration files                  By default all config files are located in the configs/ directory. 
+    Configuration files                  By default all config files are located in the configs 
+                                           directory. 
       --ensembl_downloader_config        Patht to configuration file for ENSEMBL download parameters
-      --ensembl_config                   Patht to configuration file for parameters in generating protein databases 
-                                             from ENSMEBL sequences
-      --cosmic_config                    Patht to configuration file for parameters in generating protein databases 
-                                             from COSMIC mutations
-      --cbioportal_config                Patht to configuration file for parameters in generating protein databases 
-                                             from cBioPortal mutations
-      --protein_decoy_config             Patht to configuration file for parameters used in generating decoy databses
+      --ensembl_config                   Patht to configuration file for parameters in generating
+                                           protein databases from ENSMEBL sequences
+      --cosmic_config                    Patht to configuration file for parameters in generating  
+                                           protein databases from COSMIC mutations
+      --cbioportal_config                Patht to configuration file for parameters in generating  
+                                           protein databases from cBioPortal mutations
+      --protein_decoy_config             Patht to configuration file for parameters used in generating 
+                                           decoy databses
     
     Database parameters:
-      --taxonomy                         Taxonomy (Taxon ID) for the species to download ENSEMBL data, default is 9606 for humans. 
-                                         For the list of supported taxonomies see: https://www.ensembl.org/info/about/species.html   
+      --taxonomy                         Taxonomy (Taxon ID) for the species to download ENSEMBL data,
+                                           default is 9606 for humans. 
+                                         For the list of supported taxonomies see: 
+                                           https://www.ensembl.org/info/about/species.html   
     
-      --cosmic_tissue_type               Specify a tissue type to limit the COSMIC mutations for a particular caner type 
-                                             (default is all, i.e. mutations from all tumor types are used)  
-      --cbioportal_tissue_type           Specify a tissue type to limit the cBioPortal mutations for a particular caner type 
-                                            (default is all, i.e. mutations from all tumor types are used)
-      --af_field                         Allele frequency identifier string in VCF Info column, if no AF info is given set it to empty. 
-                                            For human VCF files from ENSEMBL the default is set to MAF
+      --cosmic_tissue_type               Specify a tissue type to limit the COSMIC mutations to 
+                                           a particular caner type (by default all tumor types are used)  
+      --cbioportal_tissue_type           Specify a tissue type to limit the cBioPortal mutations to 
+                                           a particular caner type (by default all tumor types are used)
+      --af_field                         Allele frequency identifier string in VCF Info column, 
+                                           if no AF info is given set it to empty. 
+                                           For human VCF files from ENSEMBL the default is set to MAF
     
     Output parameters:
-      --final_database_protein           Output file name for the final database protein fasta file under the result/ directory.
+      --final_database_protein           Output file name for the final database protein fasta file 
+                                           under the result/ directory.
       --decoy_prefix                     Strig to be used as prefix for the generated decoy sequences
     
     Data download parameters:
       --cosmic_user_name                 User name (or email) for COSMIC account
       --cosmic_password                  Password for COSMIC account
-                                         In order to be able to download COSMIC data, the user should provide a user and password. 
-                                         Please first register in COSMIC database (https://cancer.sanger.ac.uk/cosmic/register).
+                                         In order to be able to download COSMIC data, the user should 
+                                         provide a user and password. Please first register in COSMIC 
+                                         database (https://cancer.sanger.ac.uk/cosmic/register).
 
-      --gencode_url                      URL for downloading GENCODE datafiles: gencode.v19.pc_transcripts.fa.gz and gencode.v19.annotation.gtf.gz 
+      --gencode_url                      URL for downloading GENCODE datafiles: 
+                                           gencode.v19.pc_transcripts.fa.gz and 
+                                           gencode.v19.annotation.gtf.gz 
       --gnomad_file_url                  URL for downloading gnomAD VCF file(s)
     
       --help                             Print this help document
@@ -80,7 +91,7 @@ def helpMessage() {
     Pipeline Tasks:
     ========================================================================================
     
-    Get fasta proteins, cdnas, ncRNAs and gtf files from ENSEMBL (default species = 9606), latest release
+    Get fasta proteins, cdnas, ncRNAs and gtf files from ENSEMBL (default species = 9606)
         (processes: ensembl_fasta_download, gunzip_ensembl_files, merge_cdnas)
     
     Generate ncRNA, psudogenes, altORFs databases
