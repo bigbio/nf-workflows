@@ -81,7 +81,7 @@ def helpMessage() {
     ========================================================================================
     
     Get fasta proteins, cdnas, ncRNAs and gtf files from ENSEMBL (default species = 9606), latest release
-        (processes: ensembl_protein_fasta_download, gunzip_ensembl_files, merge_cdnas)
+        (processes: ensembl_fasta_download, gunzip_ensembl_files, merge_cdnas)
     
     Generate ncRNA, psudogenes, altORFs databases
         (processes: add_ncrna, add_pseudogenes , add_altorfs)
@@ -191,7 +191,7 @@ ZCAT = (System.properties['os.name'] == 'Mac OS X' ? 'gzcat' : 'zcat')
 /** 
  * Download data from ensembl for the particular species. 
  */ 
-process ensembl_protein_fasta_download{
+process ensembl_fasta_download{
     
     //container 'quay.io/bigbio/pypgatk:0.0.1'
     
