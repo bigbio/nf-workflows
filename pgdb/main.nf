@@ -264,7 +264,7 @@ process add_ncrna{
 
   script:
   """
-  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta ${x} --output_proteindb ncRNAs_proteinDB.fa --include_biotypes "${biotypes['ncRNA']}" --skip_including_all_cds
+  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta ${x} --output_proteindb ncRNAs_proteinDB.fa --include_biotypes "${biotypes['ncRNA']}" --skip_including_all_cds --var_prefix ncRNA_
   """
 }
 
@@ -290,7 +290,7 @@ process add_pseudogenes {
 
   script:
   """
-  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb pseudogenes_proteinDB.fa --include_biotypes "${biotypes['pseudogene']}" --skip_including_all_cds
+  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb pseudogenes_proteinDB.fa --include_biotypes "${biotypes['pseudogene']}" --skip_including_all_cds --var_prefix pseudo_
   """
 }
 
@@ -316,7 +316,7 @@ process add_altorfs {
 
   script:
   """
-  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb altorfs_proteinDB.fa --include_biotypes "${biotypes['protein_coding']}'" --skip_including_all_cds
+  python ${container_path}pypgatk_cli.py dnaseq-to-proteindb --config_file "${ensembl_config}" --input_fasta "${x}" --output_proteindb altorfs_proteinDB.fa --include_biotypes "${biotypes['protein_coding']}'" --skip_including_all_cds --var_prefix altorf_
   """
 }
 
@@ -461,7 +461,7 @@ process ensembl_vcf_proteinDB {
   	
     script:
   	"""
-  	python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file ${e} --af_field "${params.af_field}" --include_biotypes "${biotypes['protein_coding']}" --input_fasta ${f} --gene_annotations_gtf ${g} --vep_annotated_vcf ${v} --output_proteindb "${v}_proteinDB.fa"
+  	python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file ${e} --af_field "${params.af_field}" --include_biotypes "${biotypes['protein_coding']}" --input_fasta ${f} --gene_annotations_gtf ${g} --vep_annotated_vcf ${v} --output_proteindb "${v}_proteinDB.fa"  --var_prefix ensvar
   	"""
 }
 
@@ -557,7 +557,7 @@ process gnomad_proteindb{
 	
 	script:
 	"""
-	python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file ${e} --vep_annotated_vcf ${v} --input_fasta ${f} --gene_annotations_gtf ${g} --output_proteindb "${v}_proteinDB.fa" --af_field controls_AF --transcript_index 6 --biotype_str transcript_type --annotation_field_name vep
+	python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file ${e} --vep_annotated_vcf ${v} --input_fasta ${f} --gene_annotations_gtf ${g} --output_proteindb "${v}_proteinDB.fa" --af_field controls_AF --transcript_index 6 --biotype_str transcript_type --annotation_field_name vep  --var_prefix gnomadvar
 	"""
 }
 
