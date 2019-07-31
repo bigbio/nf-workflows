@@ -487,7 +487,7 @@ process ensembl_vcf_proteinDB {
   	
     script:
   	"""
-  	python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file ${e} --af_field "${af_field}" --include_biotypes "${biotypes['protein_coding']}" --input_fasta ${f} --gene_annotations_gtf ${g} --vep_annotated_vcf checked_${v} --output_proteindb "${v}_proteinDB.fa"  --var_prefix ensvar
+  	python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file ${e} --af_field "${af_field}" --include_biotypes "${biotypes['protein_coding']}" --input_fasta ${f} --gene_annotations_gtf ${g} --vep_annotated_vcf ${v} --output_proteindb "${v}_proteinDB.fa"  --var_prefix ensvar
   	"""
 }
 
