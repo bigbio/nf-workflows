@@ -531,6 +531,7 @@ process gnomad_download{
 	
 	output:
 	file "*.vcf.bgz" into gnomad_vcf_bgz
+	
 	script:
 	"""
 	gsutil cp ${g} .
@@ -546,7 +547,7 @@ process extract_gnomad_vcf{
 	params.gnomad
 	
 	input:
-	file g from gnomad_vcf_bgz
+	file g from gnomad_vcf_bgz.flatten().map{ file(it) }
 	
 	output:
 	file "*.vcf" into gnomad_vcf_files
@@ -569,7 +570,7 @@ process gnomad_proteindb{
 	params.gnomad
 	
 	input:
-	file v from gnomad_vcf_files.flatten()
+	file v from gnomad_vcf_files
 	file f from gencode_fasta
 	file g from gencode_gtf
 	file e from ensembl_config
