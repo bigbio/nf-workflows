@@ -432,7 +432,7 @@ process ensembl_vcf_download{
  * Decompress vcf files downloaded from ENSEMBL 
  */ 
 process gunzip_vcf_ensembl_files{
-	
+
 	when:
     params.ensembl
     
@@ -440,11 +440,13 @@ process gunzip_vcf_ensembl_files{
     file vcf_file from ensembl_vcf_gz_files.flatten().map{ file(it) }
 
     output: 
-    file "*.vcf" into ensembl_vcf_files
+    file "checked_*.vcf" into ensembl_vcf_files
     
     script: 
     """
     gunzip -d --force $vcf_file
+    awk 'BEGIN{FS=OFS="\t"}{if($1~"#" || ($5!="" && $4!="")) print}' $vcf_file > checked_$vcf_file
+  	
     """
 }
 
@@ -470,7 +472,6 @@ process ensembl_vcf_proteinDB {
   	
     script:
   	"""
-  	awk 'BEGIN{FS=OFS="\t"}{if($1~"#" || ($5!="" && $4!="")) print}' ${v} > checked_${v}
   	python ${container_path}pypgatk_cli.py vcf-to-proteindb --config_file ${e} --af_field "${af_field}" --include_biotypes "${biotypes['protein_coding']}" --input_fasta ${f} --gene_annotations_gtf ${g} --vep_annotated_vcf checked_${v} --output_proteindb "${v}_proteinDB.fa"  --var_prefix ensvar
   	"""
 }
