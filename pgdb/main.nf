@@ -440,16 +440,31 @@ process gunzip_vcf_ensembl_files{
     file vcf_file from ensembl_vcf_gz_files.flatten().map{ file(it) }
 
     output: 
-    file "checked_*.vcf" into ensembl_vcf_files
+    file "*.vcf" into ensembl_vcf_files
     
     script: 
     """
     gunzip -d --force $vcf_file
-    awk 'BEGIN{FS=OFS="\t"}{if($1~"#" || ($5!="" && $4!="")) print}' $vcf_file > checked_$vcf_file
   	
     """
 }
 
+process check_ensembl_vcf{
+
+	when:
+    params.ensembl
+    
+    input: 
+    file vcf_file from ensembl_vcf_files
+
+    output: 
+    file "checked_*.vcf" into ensembl_vcf_files_checked
+    
+    script: 
+    """
+    awk 'BEGIN{FS=OFS="\t"}{if(\$1~"#" || (\$5!="" && \$4!="")) print}' $vcf_file > checked_$vcf_file
+    """
+}
 /**
  * Generate protein database(s) from ENSEMBL vcf file(s) 
  */ 
@@ -462,7 +477,7 @@ process ensembl_vcf_proteinDB {
 	params.ensembl
 
   	input:
-  	file v from ensembl_vcf_files
+  	file v from ensembl_vcf_files_checked
   	file f from total_cdnas
   	file g from gtf
   	file e from ensembl_config
