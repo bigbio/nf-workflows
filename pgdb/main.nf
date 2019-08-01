@@ -99,7 +99,7 @@ def helpMessage() {
         (processes: add_ncrna, add_pseudogenes , add_altorfs)
     
     Generate ENSEMBL variant protein database (VCFs, default species = 9606)
-        (processes: ensembl_vcf_download, gunzip_vcf_ensembl_files, ensembl_vcf_proteinDB)
+        (processes: ensembl_vcf_download, gunzip_vcf_ensembl_files, check_ensembl_vcf, ensembl_vcf_proteinDB)
 
     Generate gnomAD variant protein database
         (processes: gencode_download, , extract_gnomad_vcf, gnomad_proteindb)
@@ -471,7 +471,6 @@ process check_ensembl_vcf{
 process ensembl_vcf_proteinDB {
 
 	//container 'quay.io/bigbio/pypgatk:0.0.1'
-	publishDir "result", mode: 'copy', overwrite: true
 	
 	when:
 	params.ensembl
@@ -491,7 +490,12 @@ process ensembl_vcf_proteinDB {
   	"""
 }
 
-merged_databases = merged_databases.mix(proteinDB_vcf)
+//concatenate all ensembl proteindbs into one
+proteinDB_vcf
+	.collectFile(name: 'ensembl_proteindb.fa', newLine: false, storeDir: 'result')
+	.set {proteinDB_vcf_final}
+
+merged_databases = merged_databases.mix(proteinDB_vcf_final)
 
 /****** gnomAD variatns *****/
 
@@ -564,7 +568,6 @@ process extract_gnomad_vcf{
 process gnomad_proteindb{
 	
 	//container 'quay.io/bigbio/pypgatk:0.0.1'
-	publishDir "result", mode: 'copy', overwrite: true
 	
 	when:
 	params.gnomad
@@ -584,7 +587,12 @@ process gnomad_proteindb{
 	"""
 }
 
-merged_databases = merged_databases.mix(gnomad_vcf_proteindb)
+//concatenate all gnomad proteindbs into one
+gnomad_vcf_proteindb
+	.collectFile(name: 'gnomad_proteindb.fa', newLine: false, storeDir: 'result')
+	.set {gnomad_vcf_proteindb_final}
+
+merged_databases = merged_databases.mix(gnomad_vcf_proteindb_final)
 
 /****** cBioPortal mutations *****/
 /**
