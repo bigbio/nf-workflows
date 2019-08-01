@@ -184,7 +184,7 @@ params.decoy_prefix = "decoy_"
 
 //gencode download parameters
 params.gencode_url = "ftp://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_19"
-params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.vcf.bgz"
+params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/genomes/gnomad.genomes.r2.1.1.sites.*.vcf.bgz"
 //params.gnomad_file_url =  "gs://gnomad-public/release/2.1.1/vcf/exomes/gnomad.exomes.r2.1.1.sites.vcf.bgz" //use for testing the pipeline, smaller file - only exomes
 
 //pipeline checks
