@@ -51,7 +51,7 @@ result_folder = params.result_folder
  */
 process peptideIdentification {
 
-   container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq'
+   container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq_2'
    publishDir "${params.result_folder}", mode: 'copy', overwrite: true
 
    memory { 10.GB * task.attempt }
@@ -75,7 +75,7 @@ process peptideIdentification {
  */
 process peptideIndexer {
 
-   container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq'
+   container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq_2'
    publishDir "${params.result_folder}", mode: 'copy', overwrite: true
 
    input:
@@ -120,7 +120,7 @@ process peptideFDRCompute {
  */
 process peptideFDRFilter {
 
-   container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq'
+   container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq_2'
    publishDir "${params.result_folder}", mode: 'copy', overwrite: true
 
    input:
@@ -139,7 +139,7 @@ process peptideFDRFilter {
 
 process convertMZIdML{
 
-   container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq'
+   container 'mwalzer/openms-batteries-included:V2.4.0_proteomic_lfq_2'
    publishDir "${params.result_folder}", mode: 'copy', overwrite: true
 
    input:
