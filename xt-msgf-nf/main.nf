@@ -53,8 +53,7 @@ pia_config = file(params.pia_config)
  * protein accession.
  */
 process createDecoyDb {
-	container 'biocontainers/searchgui:v2.8.6_cv2'
-
+	
 	input:
 	file "db.fasta" from fasta_file
 
@@ -71,7 +70,7 @@ process createDecoyDb {
  * Create the MSGF+ database index
  */
 process createMsgfDbIndex {
-	container 'quay.io/biocontainers/msgf_plus:2017.07.21--3'
+	
 	memory '4 GB'
 	
 	input:
@@ -95,7 +94,6 @@ process createMsgfDbIndex {
  *   * -ntt 2 = Termini
  */
 process searchMsgf {
-	container 'quay.io/biocontainers/msgf_plus:2017.07.21--3'
 	publishDir "result"
 
 	memory { 4.GB * task.attempt }
@@ -118,7 +116,6 @@ process searchMsgf {
 }
 
 process createTideIndex {
-	container 'ypriverol/crux:3.2.9'
 	memory { 4.GB }
 
 	input:
@@ -135,7 +132,7 @@ process createTideIndex {
 }
 
 process searchTide {
-	container 'ypriverol/crux:3.2.9'
+	
 	memory { 4.GB }
 	publishDir "result"
 
@@ -174,7 +171,7 @@ msgf_key = msgf_result.map { file ->
 combined_results = tide_key.combine(msgf_key, by: 0)
 
 process mergeSearchResults {
-	container 'ypriverol/pia:1.3.10'
+
 	publishDir "result"
 	publishDir "result", mode: 'copy', overwrite: true
 
@@ -226,7 +223,7 @@ all_search_files = all_msgf_result.concat(all_tide_result)
  * Compile all the results in to one xml file.
  */
  process mergeCompleteSearchResults {
- 	container 'ypriverol/pia:1.3.10'
+ 	
  	publishDir "result"
 
  	memory { 16.GB * task.attempt }
@@ -248,7 +245,7 @@ all_search_files = all_msgf_result.concat(all_tide_result)
   * Inference and filtering the final mztab results
   */
  process filterPiaCompleteResults {
- 	container 'ypriverol/pia:1.3.10'
+ 	
  	publishDir "result", mode: 'copy', overwrite: true
 
  	memory { 16.GB * task.attempt }
