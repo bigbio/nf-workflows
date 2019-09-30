@@ -170,6 +170,10 @@ biotypes = [
 	]
 
 //vcf-to-proteindb parameters
+params.split_by_tissue_type = false
+split_by_tissue_type = ""
+if params.split_by_tissue_type:
+        split_by_tissue_type = "--split_by_tissue_type"
 params.cosmic_tissue_type = 'all'
 params.cbioportal_tissue_type = 'all'
 params.af_field = "" //set to empty when AF_field does not exist in the INFO filed or filtering on AF is not desired
@@ -400,7 +404,7 @@ process cosmic_proteindb{
 	
 	script:
 	"""
-	python ${container_path}pypgatk_cli.py cosmic-to-proteindb --config_file "${cosmic_config}" --input_mutation ${m} --input_genes ${g} --tissue_type ${params.cosmic_tissue_type} --output_db cosmic_proteinDB.fa
+	python ${container_path}pypgatk_cli.py cosmic-to-proteindb --config_file "${cosmic_config}" --input_mutation ${m} --input_genes ${g} --tissue_type ${params.cosmic_tissue_type} ${split_by_tissue_type} --output_db cosmic_proteinDB.fa
 	"""
 }
 
@@ -657,7 +661,7 @@ process cds_GRCh37_download{
 	
 	script:
 	"""
-	python ${container_path}pypgatk_cli.py cbioportal-to-proteindb --config_file "${cbioportal_config}" --input_mutation ${m} --input_cds ${g} --clinical_sample_file ${s} --tissue_type ${params.cbioportal_tissue_type} --output_db cbioPortal_proteinDB.fa
+	python ${container_path}pypgatk_cli.py cbioportal-to-proteindb --config_file "${cbioportal_config}" --input_mutation ${m} --input_cds ${g} --clinical_sample_file ${s} --tissue_type ${params.cbioportal_tissue_type} ${split_by_tissue_type} --output_db cbioPortal_proteinDB.fa
 	"""
 }
 
